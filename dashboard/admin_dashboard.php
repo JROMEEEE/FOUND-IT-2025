@@ -53,21 +53,6 @@ if ($is_admin != 1) {
             </a>
           </li>
           <li class="nav-item mx-2">
-            <a class="nav-link text-white fw-semibold" href="manage_users.php">
-              <i class="bi bi-people"></i> Manage Users
-            </a>
-          </li>
-          <li class="nav-item mx-2">
-            <a class="nav-link text-white fw-semibold" href="manage_items.php">
-              <i class="bi bi-box-seam"></i> Manage Items
-            </a>
-          </li>
-          <li class="nav-item mx-2">
-            <a class="nav-link text-white fw-semibold" href="claims.php">
-              <i class="bi bi-clipboard-check"></i> Claims
-            </a>
-          </li>
-          <li class="nav-item mx-2">
             <a class="btn btn-light btn-sm fw-semibold text-danger" href="../accounts/logout.php">
               <i class="bi bi-box-arrow-right"></i> Logout
             </a>
