@@ -15,14 +15,15 @@ if (!$conn) {
 $session_lifetime = 3600;
 
 // If already logged in and not expired → redirect to dashboard
-if (isset($_SESSION['user_id']) && isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] < $session_lifetime)) {
-    if ($_SESSION['is_admin']) {
-        header("Location: ../dashboard/admin_dashboard.php");
-    } else {
-        header("Location: ../dashboard/user_dashboard.php");
-    }
-    exit;
-}
+  if (
+      isset($_SESSION['user_id']) && 
+      isset($_SESSION['last_activity']) && 
+      (time() - $_SESSION['last_activity'] < $session_lifetime)
+  ) {
+      header("Location: ../dashboard/user_dashboard.php");
+      exit;
+  }
+
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST["email"]);

@@ -2,22 +2,32 @@
 session_start();
 include '../dbconnect.php';
 
+$database = new Database();
+$pdo = $database->getConnect();
+
 // SESSION TIMEOUT: 1h (3600s)
 $session_lifetime = 3600;
 
-// CHECK IF USER IS LOGGED IN
+// CHECK IF USER IS LOGGED IN OR SESSION EXPIRED
 if (!isset($_SESSION['user_id']) || (time() - $_SESSION['last_activity'] > $session_lifetime)) {
-    session_unset(); // CLEAR ALL SESSION VARIABLES
-    session_destroy(); // DESTROY SESSION
-    header("Location: login.php"); // REDIRECT TO LOGIN
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
     exit;
 }
 
 // UPDATE ACTIVITY TIME
 $_SESSION['last_activity'] = time();
 
+$user_id = $_SESSION['user_id'];
 $user_name = htmlspecialchars($_SESSION['user_name']);
 $email = htmlspecialchars($_SESSION['email']);
+
+// ✅ FETCH admin status from DB
+$stmt = $pdo->prepare("SELECT is_admin FROM users_table WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$is_admin = $user ? (int)$user['is_admin'] : 0;
 ?>
 
 <!DOCTYPE html>
@@ -64,7 +74,7 @@ $email = htmlspecialchars($_SESSION['email']);
   <div class="container py-5">
     <div class="text-center mb-5">
       <h2 class="fw-bold text-danger">Welcome, <?php echo $user_name; ?>!</h2>
-      <p class="text-muted">Here’s your FOUND-IT user dashboard overview.</p>
+      <p class="text-muted">FOUND-IT Dasboard</p>
     </div>
 
     <div class="row g-4 justify-content-center">
@@ -110,6 +120,23 @@ $email = htmlspecialchars($_SESSION['email']);
           </div>
         </div>
       </div>
+
+      <!-- ADMIN DASHBOARD CARD (Visible only if Admin) -->
+      <?php if ($is_admin === 1): ?>
+      <div class="col-md-4">
+        <div class="card shadow border-0 bg-dark text-white">
+          <div class="card-body text-center">
+            <i class="bi bi-shield-lock display-4 text-light mb-3"></i>
+            <h5 class="fw-bold mb-1">Admin Dashboard</h5>
+            <p class="text-light small mb-3">Manage reports, claims, and system data.</p>
+            <a href="admin_dashboard.php" class="btn btn-light btn-sm fw-semibold">
+              <i class="bi bi-speedometer2"></i> Go to Admin Panel
+            </a>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
+
     </div>
 
     <!-- BUTTON HOME -->

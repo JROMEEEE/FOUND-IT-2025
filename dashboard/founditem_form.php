@@ -24,17 +24,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $fnd_datetime = date('Y-m-d H:i:s');
     $fnd_status = 'unclaimed';
 
-    // IMAGE UPLOAD
-    $fnd_image = null;
+    // IMAGE UPLOAD HANDLING (store in /uploads/found_items/)
+    $uploadDir = '../uploads/found_items/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0777, true); // create folder if not exists
+    }
+
+    $image_path = null;
     if (!empty($_FILES['fnd_image']['name'])) {
-        $imageData = file_get_contents($_FILES['fnd_image']['tmp_name']);
-        $fnd_image = $imageData;
+        $fileName = basename($_FILES['fnd_image']['name']);
+        $targetFile = $uploadDir . time() . '_' . $fileName;
+
+        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+
+        if (in_array($imageFileType, $allowedTypes)) {
+            if (move_uploaded_file($_FILES['fnd_image']['tmp_name'], $targetFile)) {
+                // Save relative path for database
+                $image_path = 'uploads/found_items/' . time() . '_' . $fileName;
+            } else {
+                $error = "Failed to upload image.";
+            }
+        } else {
+            $error = "Invalid image file type. Only JPG, PNG, or GIF allowed.";
+        }
     }
 
     // INSERT INTO found_report
     $sql = "INSERT INTO found_report 
-            (fnd_name, fnd_desc, location_id, fnd_datetime, user_id, fnd_image, category_id, fnd_status)
-            VALUES (:fnd_name, :fnd_desc, :location_id, :fnd_datetime, :user_id, :fnd_image, :category_id, :fnd_status)";
+            (fnd_name, fnd_desc, location_id, fnd_datetime, user_id, image_path, category_id, fnd_status)
+            VALUES (:fnd_name, :fnd_desc, :location_id, :fnd_datetime, :user_id, :image_path, :category_id, :fnd_status)";
     $stmt = $conn->prepare($sql);
 
     $stmt->bindParam(':fnd_name', $fnd_name);
@@ -42,14 +61,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt->bindParam(':location_id', $location_id);
     $stmt->bindParam(':fnd_datetime', $fnd_datetime);
     $stmt->bindParam(':user_id', $user_id);
-    $stmt->bindParam(':fnd_image', $fnd_image, PDO::PARAM_LOB);
+    $stmt->bindParam(':image_path', $image_path);
     $stmt->bindParam(':category_id', $category_id);
     $stmt->bindParam(':fnd_status', $fnd_status);
 
-    if ($stmt->execute()) {
-        $success = "Found item successfully reported!";
-    } else {
-        $error = "Error submitting report. Please try again.";
+    if (empty($error)) {
+        if ($stmt->execute()) {
+            $success = "Found item successfully reported!";
+        } else {
+            $error = "Error submitting report. Please try again.";
+        }
     }
 }
 ?>

@@ -80,7 +80,7 @@ $email = htmlspecialchars($_SESSION['email']);
             <i class="bi bi-search-heart display-4 text-danger mb-3"></i>
             <h5 class="fw-bold mb-2">Search Found Items</h5>
             <p class="text-muted small mb-4">Browse reported found items and check if yours has been turned in.</p>
-            <a href="claim_found.php" class="btn btn-danger fw-semibold mt-auto">
+            <a href="found_dashboard.php" class="btn btn-danger fw-semibold mt-auto">
               <i class="bi bi-search"></i> Search Items
             </a>
           </div>
