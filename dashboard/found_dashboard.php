@@ -15,9 +15,9 @@ if (!$conn) {
     die("Database connection failed.");
 }
 
-// FETCH ITEMS THEN JOIN W/ CATEGORY & LOC
+// FETCH ITEMS THEN JOIN W/ CATEGORY & LOCATION
 $query = "
-    SELECT f.fnd_id, f.fnd_name, f.fnd_desc, f.image_path, f.fnd_datetime, 
+    SELECT f.fnd_id, f.fnd_name, f.fnd_datetime, 
            f.fnd_status, c.category_name, l.location_name
     FROM found_report f
     INNER JOIN item_category c ON f.category_id = c.category_id
@@ -72,36 +72,26 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <div class="container py-5">
     <div class="text-center mb-5">
       <h2 class="fw-bold text-danger">Found Items Dashboard</h2>
-      <p class="text-muted">Browse all reported found items.</p>
+      <p class="text-muted">Browse reported found items and submit a claim for verification.</p>
     </div>
 
     <div class="row g-4 justify-content-center">
       <?php if (count($found_items) > 0): ?>
         <?php foreach ($found_items as $item): ?>
-          <?php 
-            $imagePath = !empty($item['image_path']) && file_exists('../' . $item['image_path']) 
-                          ? '../' . $item['image_path'] 
-                          : '../assets/no_image.png';
-          ?>
           <div class="col-md-4">
             <div class="card shadow-sm border-0 h-100">
-              <img src="<?= htmlspecialchars($imagePath) ?>" 
-                   class="card-img-top" 
-                   alt="Found Item Image" 
-                   style="height: 200px; object-fit: cover;">
-
-              <div class="card-body">
+              <div class="card-body text-center">
                 <h5 class="fw-bold text-danger mb-2"><?= htmlspecialchars($item['fnd_name']) ?></h5>
-                <p class="text-muted small mb-2">
+                <p class="text-muted small mb-1">
                   <i class="bi bi-geo-alt"></i> <?= htmlspecialchars($item['location_name']) ?>
                 </p>
-                <p class="text-muted small mb-2">
+                <p class="text-muted small mb-1">
                   <i class="bi bi-tag"></i> <?= htmlspecialchars($item['category_name']) ?>
                 </p>
-                <p class="text-muted small mb-3"><?= nl2br(htmlspecialchars($item['fnd_desc'])) ?></p>
-                <p class="text-muted small mb-3">
+                <p class="text-muted small mb-2">
                   <i class="bi bi-clock"></i> <?= date("F j, Y, g:i A", strtotime($item['fnd_datetime'])) ?>
                 </p>
+
                 <span class="badge 
                   <?= $item['fnd_status'] === 'unclaimed' ? 'bg-warning text-dark' : 
                       ($item['fnd_status'] === 'claimed' ? 'bg-success' : 'bg-secondary'); ?>">
@@ -109,12 +99,11 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </span>
 
                 <div class="d-grid mt-3">
-                  <!-- BUTTON FOR MODAL -->
                   <button type="button" 
                           class="btn btn-danger btn-sm fw-semibold" 
                           data-bs-toggle="modal" 
                           data-bs-target="#itemModal<?= $item['fnd_id'] ?>">
-                    <i class="bi bi-eye"></i> View / Claim
+                    <i class="bi bi-eye"></i> Verify Claim
                   </button>
                 </div>
               </div>
@@ -129,42 +118,56 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   <h5 class="modal-title fw-bold"><?= htmlspecialchars($item['fnd_name']) ?></h5>
                   <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+
                 <div class="modal-body">
-                  <div class="row">
-                    <div class="col-md-6 text-center">
-                      <img src="<?= htmlspecialchars($imagePath) ?>" 
-                           class="img-fluid rounded mb-3" 
-                           style="max-height: 250px; object-fit: cover;">
-                    </div>
-                    <div class="col-md-6">
-                      <p><strong>Description:</strong> <?= nl2br(htmlspecialchars($item['fnd_desc'])) ?></p>
-                      <p><strong>Category:</strong> <?= htmlspecialchars($item['category_name']) ?></p>
-                      <p><strong>Location Found:</strong> <?= htmlspecialchars($item['location_name']) ?></p>
-                      <p><strong>Date/Time:</strong> <?= date("F j, Y, g:i A", strtotime($item['fnd_datetime'])) ?></p>
-                      <p>
-                        <strong>Status:</strong> 
-                        <span class="badge 
-                          <?= $item['fnd_status'] === 'unclaimed' ? 'bg-warning text-dark' : 
-                              ($item['fnd_status'] === 'claimed' ? 'bg-success' : 'bg-secondary'); ?>">
-                          <?= ucfirst($item['fnd_status']); ?>
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
+                  <p><strong>Category:</strong> <?= htmlspecialchars($item['category_name']) ?></p>
+                  <p><strong>Location Found:</strong> <?= htmlspecialchars($item['location_name']) ?></p>
+                  <p><strong>Date/Time:</strong> <?= date("F j, Y, g:i A", strtotime($item['fnd_datetime'])) ?></p>
+                  <p>
+                    <strong>Status:</strong> 
+                    <span class="badge 
+                      <?= $item['fnd_status'] === 'unclaimed' ? 'bg-warning text-dark' : 
+                          ($item['fnd_status'] === 'claimed' ? 'bg-success' : 'bg-secondary'); ?>">
+                      <?= ucfirst($item['fnd_status']); ?>
+                    </span>
+                  </p>
+
                   <?php if ($item['fnd_status'] === 'unclaimed'): ?>
-                    <form action="claim_item.php" method="POST">
+                    <hr>
+                    <h6 class="fw-bold text-danger mb-3">Claim Verification Form</h6>
+                    <form action="claim_item.php" method="POST" class="text-start">
                       <input type="hidden" name="fnd_id" value="<?= $item['fnd_id'] ?>">
-                      <button type="submit" class="btn btn-success fw-semibold">
-                        <i class="bi bi-check-circle"></i> Claim This Item
-                      </button>
+
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Full Name</label>
+                        <input type="text" name="claimer_name" class="form-control" required>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Student ID / Valid ID No.</label>
+                        <input type="text" name="claimer_id" class="form-control" required>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <input type="email" name="claimer_email" class="form-control" required>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Describe Proof of Ownership</label>
+                        <textarea name="claimer_proof_desc" class="form-control" rows="3" placeholder="Provide a short description proving that the item belongs to you..." required></textarea>
+                      </div>
+
+                      <div class="d-grid">
+                        <button type="submit" class="btn btn-success fw-semibold">
+                          <i class="bi bi-check-circle"></i> Submit Claim for Verification
+                        </button>
+                      </div>
                     </form>
-                  <?php else: ?>
-                    <button class="btn btn-secondary" disabled>
-                      <i class="bi bi-check2-circle"></i> Already Claimed
-                    </button>
                   <?php endif; ?>
+                </div>
+
+                <div class="modal-footer">
                   <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
               </div>

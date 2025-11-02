@@ -47,8 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $_SESSION['is_admin'] = $user['is_admin'];
                     $_SESSION['last_activity'] = time(); // track last activity time
 
-                    // REDIRECT TO CORRECT DASHBOARD
-                    header("Location: " . ($user['is_admin'] ? "../dashboard/admin_dashboard.php" : "../dashboard/user_dashboard.php"));
+                    header("Location: ../dashboard/user_dashboard.php");
                     exit;
                 } else {
                     $error = "Incorrect password. Please try again.";

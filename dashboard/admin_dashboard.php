@@ -105,7 +105,7 @@ if ($is_admin != 1) {
             <i class="bi bi-clipboard-check display-4 text-danger mb-3"></i>
             <h5 class="fw-bold mb-1">Claim Requests</h5>
             <p class="text-muted small mb-3">Verify and approve claim requests from users.</p>
-            <a href="claims.php" class="btn btn-danger btn-sm fw-semibold">
+            <a href="admin_claimrep.php" class="btn btn-danger btn-sm fw-semibold">
               <i class="bi bi-check-circle"></i> View Requests
             </a>
           </div>
