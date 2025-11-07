@@ -31,8 +31,8 @@ try {
     $query = "
         SELECT cr.*, 
                fr.fnd_name, fr.image_path,
-               u.user_name AS reporter_name, 
-               u.email AS reporter_email
+               u.user_name AS claimer_name, 
+               u.email AS claimer_email
         FROM claim_request cr
         LEFT JOIN found_report fr ON cr.fnd_id = fr.fnd_id
         LEFT JOIN users_table u ON cr.user_id = u.user_id
@@ -79,6 +79,14 @@ try {
     </div>
   </nav>
 
+  <?php if (isset($_SESSION['claim_status_msg'])): ?>
+    <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+      <?= htmlspecialchars($_SESSION['claim_status_msg']); ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <?php unset($_SESSION['claim_status_msg']); ?>
+  <?php endif; ?>
+
   <!-- PAGE HEADER -->
   <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -105,7 +113,7 @@ try {
                   <th>Ticket Code</th>
                   <th>Item</th>
                   <th>Claimer</th>
-                  <th>Email</th>
+                  <th>Email</th>  
                   <th>Status</th>
                   <th>Requested</th>
                   <th>Action</th>
@@ -119,20 +127,25 @@ try {
                                   (($status === 'rejected') ? 'danger' : 'warning');
                   ?>
                   <tr>
-                    <td><?= htmlspecialchars($row['request_id']) ?></td>
-                    <td><span class="badge bg-dark"><?= htmlspecialchars($row['ticket_code']) ?></span></td>
-                    <td><?= htmlspecialchars($row['fnd_name'] ?? 'Unknown') ?></td>
-                    <td><?= htmlspecialchars($row['claimer_name'] ?? 'Unknown') ?></td>
-                    <td><?= htmlspecialchars($row['claimer_email'] ?? 'N/A') ?></td>
-                    <td><span class="badge bg-<?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($status) ?></span></td>
-                    <td><?= htmlspecialchars(date("M d, Y h:i A", strtotime($row['request_date']))) ?></td>
+                    <td><?= $row['request_id'] ?></td>
+                    <td><span class="badge bg-dark"><?= $row['ticket_code'] ?></span></td>
+                    <td><?= htmlspecialchars($row['fnd_name']) ?></td>
+                    <td><?= htmlspecialchars($row['claimer_name']) ?></td>
+                    <td><?= htmlspecialchars($row['claimer_email']) ?></td>
+                    <td><span class="badge bg-<?= $badgeClass ?>"><?= strtoupper($status) ?></span></td>
+                    <td><?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></td>
                     <td>
                       <?php if ($status === 'pending'): ?>
                         <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal<?= $row['request_id'] ?>">
                           <i class="bi bi-search"></i> Review
                         </button>
                       <?php else: ?>
-                        <span class="text-muted fst-italic">Reviewed</span>
+                        <form method="POST" action="delete_claim.php" class="d-inline">
+                          <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+                          <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Remove this claim permanently?');">
+                            <i class="bi bi-trash"></i> Remove
+                          </button>
+                        </form>
                       <?php endif; ?>
                     </td>
                   </tr>
@@ -161,7 +174,7 @@ try {
                               <?php else: ?>
                                 <div class="alert alert-secondary small">No image available.</div>
                               <?php endif; ?>
-                              <p class="small mb-1"><strong>Item Name:</strong> <?= htmlspecialchars($row['fnd_name'] ?? 'N/A') ?></p>
+                              <p class="small mb-1"><strong>Item Name:</strong> <?= htmlspecialchars($row['fnd_name']) ?></p>
                             </div>
 
                             <!-- RIGHT COLUMN -->
@@ -182,17 +195,17 @@ try {
                               <?php endif; ?>
 
                               <div class="border-top pt-2">
-                                <p class="small mb-1"><strong>Claimer:</strong> <?= htmlspecialchars($row['claimer_name'] ?? 'N/A') ?></p>
-                                <p class="small mb-1"><strong>Email:</strong> <?= htmlspecialchars($row['claimer_email'] ?? 'N/A') ?></p>
+                                <p class="small mb-1"><strong>Claimer:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
+                                <p class="small mb-1"><strong>Email:</strong> <?= htmlspecialchars($row['claimer_email']) ?></p>
                               </div>
                             </div>
                           </div>
                         </div>
 
                         <div class="modal-footer justify-content-center">
-                          <form method="POST" action="verify_claim.php" class="d-flex gap-3 m-0">
-                            <input type="hidden" name="request_id" value="<?= htmlspecialchars($row['request_id']) ?>">
-                            <input type="hidden" name="fnd_id" value="<?= htmlspecialchars($row['fnd_id']) ?>">
+                          <form method="POST" action="approve_claim.php" class="d-flex gap-3 m-0">
+                            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+                            <input type="hidden" name="fnd_id" value="<?= $row['fnd_id'] ?>">
                             <button type="submit" name="action" value="approve" class="btn btn-success px-4">
                               <i class="bi bi-check-circle"></i> Approve
                             </button>
@@ -217,4 +230,3 @@ try {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-                                
