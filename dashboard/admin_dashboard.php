@@ -38,7 +38,7 @@ if ($is_admin != 1) {
 
 <body class="bg-light">
   <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
     <div class="container">
       <a class="navbar-brand fw-bold" href="../index.php">FOUND-IT Admin</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -63,7 +63,7 @@ if ($is_admin != 1) {
   </nav>
 
   <!-- ADMIN DASHBOARD CONTENT -->
-  <div class="container py-5">
+  <div class="container py-5 mt-5">
     <div class="text-center mb-5">
       <h2 class="fw-bold text-danger">Welcome Admin, <?php echo $user_name; ?>!</h2>
       <p class="text-muted">Manage FOUND-IT system data and review user submissions here.</p>

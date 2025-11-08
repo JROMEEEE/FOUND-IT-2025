@@ -52,11 +52,31 @@ try {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FOUND-IT | Claim Review</title>
   <?php include '../imports.php'; ?>
+  
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+  
+  <!-- jQuery & DataTables JS -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+
+  <!-- Custom spacing for DataTables -->
+  <style>
+      /* Space between search box and table */
+      div.dataTables_wrapper div.dataTables_filter {
+          margin-bottom: 15px;
+      }
+
+      /* Space above pagination */
+      div.dataTables_wrapper div.dataTables_paginate {
+          margin-top: 15px;
+      }
+  </style>
 </head>
 
 <body class="bg-light">
   <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
     <div class="container">
       <a class="navbar-brand fw-bold" href="admin_dashboard.php">FOUND-IT Admin</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -88,7 +108,7 @@ try {
   <?php endif; ?>
 
   <!-- PAGE HEADER -->
-  <div class="container py-5">
+  <div class="container py-5 mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="fw-bold text-danger mb-0"><i class="bi bi-clipboard-check"></i> Claim Request Management</h3>
       <a href="admin_dashboard.php" class="btn btn-outline-danger fw-semibold">
@@ -105,8 +125,8 @@ try {
         <?php if (empty($claims)): ?>
           <div class="alert alert-info text-center">No claim requests found.</div>
         <?php else: ?>
-          <div class="table-responsive">
-            <table class="table table-hover align-middle">
+          <div class="table-responsive mt-3">
+            <table id="claimsTable" class="table table-hover align-middle">
               <thead class="table-danger">
                 <tr>
                   <th>ID</th>
@@ -149,75 +169,6 @@ try {
                       <?php endif; ?>
                     </td>
                   </tr>
-
-                  <!-- REVIEW MODAL -->
-                  <div class="modal fade" id="reviewModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="modalLabel<?= $row['request_id'] ?>" aria-hidden="true">
-                    <div class="modal-dialog modal-lg modal-dialog-centered">
-                      <div class="modal-content">
-                        <div class="modal-header bg-danger text-white">
-                          <h5 class="modal-title" id="modalLabel<?= $row['request_id'] ?>">
-                            Review Claim Request #<?= htmlspecialchars($row['request_id']) ?>
-                          </h5>
-                          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-
-                        <div class="modal-body">
-                          <div class="row g-4">
-                            <!-- LEFT COLUMN -->
-                            <div class="col-md-6 text-center">
-                              <h6 class="fw-bold text-danger mb-3">Found Item</h6>
-                              <?php
-                                $imgPath = "../" . ($row['image_path'] ?? '');
-                                if (!empty($row['image_path']) && file_exists($imgPath)):
-                              ?>
-                                <img src="<?= htmlspecialchars($imgPath) ?>" class="img-fluid rounded shadow-sm mb-3" alt="Found Item" style="max-height: 250px; object-fit: cover;">
-                              <?php else: ?>
-                                <div class="alert alert-secondary small">No image available.</div>
-                              <?php endif; ?>
-                              <p class="small mb-1"><strong>Item Name:</strong> <?= htmlspecialchars($row['fnd_name']) ?></p>
-                            </div>
-
-                            <!-- RIGHT COLUMN -->
-                            <div class="col-md-6">
-                              <h6 class="fw-bold text-danger mb-3">Claimer’s Statement</h6>
-                              <div class="border rounded bg-light p-3 mb-3" style="min-height: 200px; overflow-y: auto;">
-                                <?php if (!empty($row['proof_of_ownership'])): ?>
-                                  <p class="mb-0"><?= nl2br(htmlspecialchars($row['proof_of_ownership'])) ?></p>
-                                <?php else: ?>
-                                  <p class="text-muted fst-italic mb-0">No statement provided by the claimer.</p>
-                                <?php endif; ?>
-                              </div>
-
-                              <?php if (!empty($row['proof_image'])): ?>
-                                <div class="text-center mb-3">
-                                  <img src="../<?= htmlspecialchars($row['proof_image']) ?>" class="img-fluid rounded shadow-sm" alt="Proof Image" style="max-height: 200px; object-fit: cover;">
-                                </div>
-                              <?php endif; ?>
-
-                              <div class="border-top pt-2">
-                                <p class="small mb-1"><strong>Claimer:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
-                                <p class="small mb-1"><strong>Email:</strong> <?= htmlspecialchars($row['claimer_email']) ?></p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="modal-footer justify-content-center">
-                          <form method="POST" action="approve_claim.php" class="d-flex gap-3 m-0">
-                            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-                            <input type="hidden" name="fnd_id" value="<?= $row['fnd_id'] ?>">
-                            <button type="submit" name="action" value="approve" class="btn btn-success px-4">
-                              <i class="bi bi-check-circle"></i> Approve
-                            </button>
-                            <button type="submit" name="action" value="reject" class="btn btn-danger px-4">
-                              <i class="bi bi-x-circle"></i> Reject
-                            </button>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <!-- END MODAL -->
                 <?php endforeach; ?>
               </tbody>
             </table>
@@ -226,6 +177,21 @@ try {
       </div>
     </div>
   </div>
+
+  <!-- DATATABLE SCRIPT -->
+  <script>
+    $(document).ready(function () {
+      $('#claimsTable').DataTable({
+        pageLength: 10,
+        order: [[6, 'desc']], // Sort by Requested date column
+        responsive: true,
+        language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search claims..."
+        }
+      });
+    });
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

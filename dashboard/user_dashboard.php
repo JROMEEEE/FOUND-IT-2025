@@ -41,7 +41,7 @@ $is_admin = $user ? (int)$user['is_admin'] : 0;
 
 <body class="bg-light">
   <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
     <div class="container">
       <a class="navbar-brand fw-bold" href="../index.php">FOUND-IT</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -71,7 +71,7 @@ $is_admin = $user ? (int)$user['is_admin'] : 0;
   </nav>
 
   <!-- DASHBOARD CONTENT -->
-  <div class="container py-5">
+  <div class="container py-5 mt-5">
     <div class="text-center mb-5">
       <h2 class="fw-bold text-danger">Welcome, <?php echo $user_name; ?>!</h2>
       <p class="text-muted">FOUND-IT Dasboard</p>
