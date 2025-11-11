@@ -10,6 +10,30 @@ if (!isset($_SESSION['user_id'])) {
 $database = new Database();
 $conn = $database->getConnect();
 
+// SESSION TIMEOUT (1 hour)
+$session_lifetime = 3600;
+
+// CHECK LOGIN + SESSION TIME
+if (!isset($_SESSION['user_id']) || (time() - $_SESSION['last_activity'] > $session_lifetime)) {
+    session_unset();
+    session_destroy();
+    header("Location: ../accounts/login.php");
+    exit;
+}
+$_SESSION['last_activity'] = time(); // Refresh session time
+
+// FETCH USER INFO
+$user_id = $_SESSION['user_id'];
+$user_name = htmlspecialchars($_SESSION['user_name']);
+$email = htmlspecialchars($_SESSION['email']);
+$is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 0;
+
+// RESTRICT ACCESS TO ADMINS ONLY
+if ($is_admin != 1) {
+    header("Location: user_dashboard.php");
+    exit;
+}
+
 // GET CATEGORY & LOCATIONS
 $categories = $conn->query("SELECT category_id, category_name FROM item_category")->fetchAll(PDO::FETCH_ASSOC);
 $locations = $conn->query("SELECT location_id, location_name FROM location_table")->fetchAll(PDO::FETCH_ASSOC);
@@ -89,61 +113,69 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="card-header bg-danger text-white text-center fw-bold">
             Report Found Item
         </div>
+
         <div class="card-body">
-            <?php if (!empty($success)): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
-            <?php elseif (!empty($error)): ?>
-                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
-            <form method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Item Name</label>
-                    <input type="text" name="fnd_name" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Item Description</label>
-                    <textarea name="fnd_desc" class="form-control" rows="3" required></textarea>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Location Found</label>
-                        <select name="location_id" class="form-select" required>
-                            <option value="">Select Location</option>
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?= $loc['location_id'] ?>"><?= htmlspecialchars($loc['location_name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Item Category</label>
-                        <select name="category_id" class="form-select" required>
-                            <option value="">Select Category</option>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= $cat['category_id'] ?>"><?= htmlspecialchars($cat['category_name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Upload Image (optional)</label>
-                    <input type="file" name="fnd_image" class="form-control" accept="image/*">
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <a href="user_dashboard.php" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left"></i> Back to Dashboard
-                    </a>
-                    <button type="submit" class="btn btn-danger fw-semibold">
-                        <i class="bi bi-send"></i> Submit Report
-                    </button>
-                </div>
-            </form>
+        <div class="alert alert-warning small" role="alert">
+            <strong>Disclaimer:</strong> Lorem ipsum dolor sit amet consectetur adipisicing elit. Sed accusamus harum reiciendis consectetur nisi soluta iste ipsam quos non, qui sit aliquam odit quas repellat dicta voluptate, blanditiis alias dolores.
+            <br><em>(test)</em>
         </div>
+
+        <?php if (!empty($success)): ?>
+            <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+        <?php elseif (!empty($error)): ?>
+            <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Item Name</label>
+                <input type="text" name="fnd_name" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Item Description</label>
+                <textarea name="fnd_desc" class="form-control" rows="3" required></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Location Found</label>
+                    <select name="location_id" class="form-select" required>
+                        <option value="">Select Location</option>
+                        <?php foreach ($locations as $loc): ?>
+                            <option value="<?= $loc['location_id'] ?>"><?= htmlspecialchars($loc['location_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-semibold">Item Category</label>
+                    <select name="category_id" class="form-select" required>
+                        <option value="">Select Category</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= $cat['category_id'] ?>"><?= htmlspecialchars($cat['category_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Upload Image (recommended, but optional)</label>
+                <input type="file" name="fnd_image" class="form-control" accept="image/*">
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <a href="admin_dashboard.php" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <button type="submit" class="btn btn-danger fw-semibold">
+                    <i class="bi bi-send"></i> Submit Report
+                </button>
+            </div>
+        </form>
+    </div>
+
+
     </div>
 </div>
 

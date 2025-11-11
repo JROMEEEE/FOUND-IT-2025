@@ -59,7 +59,7 @@ $email = htmlspecialchars($_SESSION['email']);
     </div>
 
     <div class="row g-4 justify-content-center">
-      <!-- REPORT FOUND ITEM -->
+      <!-- REPORT FOUND ITEM
       <div class="col-md-4 d-flex">
         <div class="card shadow border-0 flex-fill">
           <div class="card-body d-flex flex-column text-center">
@@ -71,7 +71,7 @@ $email = htmlspecialchars($_SESSION['email']);
             </a>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- SEARCH FOUND ITEM -->
       <div class="col-md-4 d-flex">

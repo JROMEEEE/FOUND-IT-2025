@@ -75,13 +75,17 @@ $claim_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
   <div class="container">
     <a class="navbar-brand fw-bold" href="user_dashboard.php">FOUND-IT</a>
-    <div class="d-flex">
+    <div class="d-flex gap-2">
+      <a href="user_dashboard.php" class="btn btn-outline-light btn-sm fw-semibold">
+        <i class="bi bi-house-door"></i> Dashboard
+      </a>
       <a href="../accounts/logout.php" class="btn btn-light btn-sm text-danger fw-semibold">
         <i class="bi bi-box-arrow-right"></i> Logout
       </a>
     </div>
   </div>
 </nav>
+
 
 <div class="container py-5">
 <!-- USER INFO -->
@@ -140,26 +144,25 @@ $claim_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
   </div>
 
   <!-- CLAIM REQUESTS -->
-  <div class="card shadow-sm mb-5">
+    <div class="card shadow-sm mb-5">
     <div class="card-header bg-danger text-white fw-semibold">
-      <i class="bi bi-ticket-perforated"></i> Your Claim Requests
+        <i class="bi bi-ticket-perforated"></i> Your Claim Requests
     </div>
     <div class="card-body">
-      <?php if (empty($claim_requests)): ?>
+        <?php if (empty($claim_requests)): ?>
         <div class="text-muted fst-italic text-center py-3">You have not submitted any claim requests.</div>
-      <?php else: ?>
+        <?php else: ?>
         <div class="table-responsive mt-3">
-          <table id="claimRequestsTable" class="table table-hover align-middle">
+            <table id="claimRequestsTable" class="table table-hover align-middle">
             <thead class="table-danger">
-              <tr>
-                <th>Ticket Code</th>
+                <tr>
                 <th>Item</th>
                 <th>Status</th>
                 <th>Date Requested</th>
-              </tr>
+                </tr>
             </thead>
             <tbody>
-              <?php foreach ($claim_requests as $row): ?>
+                <?php foreach ($claim_requests as $row): ?>
                 <?php
                 $badgeClass = match($row['status']) {
                     'approved' => 'success',
@@ -168,18 +171,17 @@ $claim_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 };
                 ?>
                 <tr>
-                  <td><span class="badge bg-dark"><?= htmlspecialchars($row['ticket_code']); ?></span></td>
-                  <td><?= htmlspecialchars($row['fnd_name']); ?></td>
-                  <td><span class="badge bg-<?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
-                  <td><?= date("M d, Y h:i A", strtotime($row['request_date'])); ?></td>
+                    <td><?= htmlspecialchars($row['fnd_name']); ?></td>
+                    <td><span class="badge bg-<?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
+                    <td><?= date("M d, Y h:i A", strtotime($row['request_date'])); ?></td>
                 </tr>
-              <?php endforeach; ?>
+                <?php endforeach; ?>
             </tbody>
-          </table>
+            </table>
         </div>
-      <?php endif; ?>
+        <?php endif; ?>
     </div>
-  </div>
+    </div>
 
 </div>
 

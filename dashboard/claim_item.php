@@ -49,19 +49,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         $lastRequest = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
+        // REQ COOLDOWN
         if ($lastRequest) {
-            $lastRequestTime = strtotime($lastRequest['request_date']);
-            $currentTime = time();
-            $timeDiff = $currentTime - $lastRequestTime;
+              $lastRequestTime = strtotime($lastRequest['request_date']);
+              $currentTime = time();
+              $timeDiff = $currentTime - $lastRequestTime;
 
-            if ($timeDiff < 900) { // 15-minute cooldown
-                $remaining = 900 - $timeDiff;
-                $minutes = floor($remaining / 60);
-                $seconds = $remaining % 60;
-                $error = "You can only submit another claim for this item after 15 minutes.<br>
-                          Please wait approximately <strong>{$minutes}m {$seconds}s</strong>.";
-            }
-        }
+              if ($timeDiff < 180) {
+                  $remaining = 180 - $timeDiff;
+                  $minutes = floor($remaining / 60);
+                  $seconds = $remaining % 60;
+                  $error = "You can only submit another claim for this item after 3 minutes.";
+              }
+          }
+
 
         // Proceed only if no cooldown or validation errors
         if (!isset($error)) {
@@ -127,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
           <div class="alert alert-success">
             Your claim request has been submitted successfully!<br>
-            <strong>Ticket Code:</strong> <?= htmlspecialchars($ticket_code) ?><br>
             Please wait for admin verification.
           </div>
           <a href="found_dashboard.php" class="btn btn-outline-danger w-100 fw-semibold mt-3">

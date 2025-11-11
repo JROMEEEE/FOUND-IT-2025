@@ -2,7 +2,7 @@
 session_start();
 include '../dbconnect.php';
 
-// SESSION TIMEOUT (1 hour)
+// SESSION TIMEOUT
 $session_lifetime = 3600;
 if (!isset($_SESSION['user_id']) || (time() - $_SESSION['last_activity'] > $session_lifetime)) {
     session_unset();
@@ -12,9 +12,7 @@ if (!isset($_SESSION['user_id']) || (time() - $_SESSION['last_activity'] > $sess
 }
 $_SESSION['last_activity'] = time();
 
-$user_name = htmlspecialchars($_SESSION['user_name']);
 $is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 0;
-
 if ($is_admin != 1) {
     header("Location: user_dashboard.php");
     exit;
@@ -23,61 +21,69 @@ if ($is_admin != 1) {
 $db = new Database();
 $conn = $db->getConnect();
 
-try {
-    // === TOTAL COUNTS === //
-    $totalLost = $conn->query("SELECT COUNT(*) AS total FROM lost_report")->fetch(PDO::FETCH_ASSOC)['total'];
-    $totalFound = $conn->query("SELECT COUNT(*) AS total FROM found_report")->fetch(PDO::FETCH_ASSOC)['total'];
-    $totalClaims = $conn->query("SELECT COUNT(*) AS total FROM claim_request WHERE status='approved'")->fetch(PDO::FETCH_ASSOC)['total'];
+// TOTAL COUNTS
+$totalLost = $conn->query("SELECT COUNT(*) AS total FROM lost_report")->fetch(PDO::FETCH_ASSOC)['total'];
+$totalFound = $conn->query("SELECT COUNT(*) AS total FROM found_report")->fetch(PDO::FETCH_ASSOC)['total'];
+$totalClaims = $conn->query("SELECT COUNT(*) AS total FROM claim_request WHERE status='approved'")->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // === MONTHLY LOST & FOUND DATA === //
-    $stmt = $conn->query("
-        SELECT MONTH(lost_datetime) AS month, COUNT(*) AS lost_count, 0 AS found_count
-        FROM lost_report
-        GROUP BY MONTH(lost_datetime)
-        UNION ALL
-        SELECT MONTH(fnd_datetime) AS month, 0 AS lost_count, COUNT(*) AS found_count
-        FROM found_report
-        GROUP BY MONTH(fnd_datetime)
-    ");
-    $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// MONTHLY DATA
+$stmt = $conn->query("
+    SELECT MONTH(lost_datetime) AS month, COUNT(*) AS lost_count, 0 AS found_count
+    FROM lost_report
+    GROUP BY MONTH(lost_datetime)
+    UNION ALL
+    SELECT MONTH(fnd_datetime) AS month, 0 AS lost_count, COUNT(*) AS found_count
+    FROM found_report
+    GROUP BY MONTH(fnd_datetime)
+");
+$rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Merge monthly data
-    $monthNames = [1=>'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    $months = [];
-    $lostData = [];
-    $foundData = [];
-
-    foreach ($monthNames as $num => $name) {
-        $lost = 0;
-        $found = 0;
-        foreach ($rawData as $row) {
-            if ($row['month'] == $num) {
-                $lost += $row['lost_count'];
-                $found += $row['found_count'];
-            }
+// Prepare monthly arrays
+$monthNames = [1=>'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+$months = $lostData = $foundData = [];
+foreach ($monthNames as $num => $name) {
+    $lost = 0;
+    $found = 0;
+    foreach ($rawData as $row) {
+        if ($row['month'] == $num) {
+            $lost += $row['lost_count'];
+            $found += $row['found_count'];
         }
-        $months[] = $name;
-        $lostData[] = $lost;
-        $foundData[] = $found;
     }
+    $months[] = $name;
+    $lostData[] = $lost;
+    $foundData[] = $found;
+}
 
-} catch (PDOException $e) {
-    die("Database error: " . $e->getMessage());
+// LOST ITEMS BY LOCATION (include all locations)
+$locStmt = $conn->query("
+    SELECT l.location_name, COUNT(lr.lost_id) AS lost_count
+    FROM location_table l
+    LEFT JOIN lost_report lr ON lr.location_id = l.location_id
+    GROUP BY l.location_id
+    ORDER BY lost_count DESC
+");
+$locData = $locStmt->fetchAll(PDO::FETCH_ASSOC);
+
+$locationNames = [];
+$locationCounts = [];
+foreach ($locData as $row) {
+    $locationNames[] = $row['location_name'];
+    $locationCounts[] = (int)$row['lost_count'];
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FOUND-IT | Statistics</title>
-  <?php include '../imports.php'; ?>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOUND-IT | Statistics</title>
+<?php include '../imports.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
 
-<!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
   <div class="container">
     <a class="navbar-brand fw-bold" href="admin_dashboard.php">FOUND-IT Admin</a>
@@ -98,7 +104,6 @@ try {
   </div>
 </nav>
 
-<!-- CONTENT -->
 <div class="container py-5 mt-5">
   <div class="text-center mb-5">
     <h2 class="fw-bold text-danger">System Statistics Overview</h2>
@@ -133,36 +138,47 @@ try {
     </div>
   </div>
 
-  <!-- CHART CARDS -->
+  <!-- CHARTS -->
   <div class="row g-4 justify-content-center">
-    <!-- PIE CHART -->
+    <!-- PIE CHART: ITEM STATUS -->
     <div class="col-md-6 d-flex">
       <div class="card shadow border-0 w-100">
         <div class="card-body d-flex flex-column justify-content-center">
           <h5 class="text-center fw-bold text-danger mb-3">Item Status Breakdown</h5>
-          <div style="height: 300px;">
-            <canvas id="itemChart"></canvas>
-          </div>
+          <div style="height: 300px;"><canvas id="itemChart"></canvas></div>
           <div class="text-center mt-3">
             <button id="downloadItemChart" class="btn btn-outline-danger btn-sm fw-semibold">
-              <i class="bi bi-download"></i> Download as PNG
+              <i class="bi bi-download"></i> Download PNG
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- BAR CHART -->
+    <!-- BAR CHART: MONTHLY REPORT -->
     <div class="col-md-6 d-flex">
       <div class="card shadow border-0 w-100">
         <div class="card-body d-flex flex-column justify-content-center">
           <h5 class="text-center fw-bold text-danger mb-3">Monthly Item Reports</h5>
-          <div style="height: 300px;">
-            <canvas id="monthlyChart"></canvas>
-          </div>
+          <div style="height: 300px;"><canvas id="monthlyChart"></canvas></div>
           <div class="text-center mt-3">
             <button id="downloadMonthlyChart" class="btn btn-outline-danger btn-sm fw-semibold">
-              <i class="bi bi-download"></i> Download as PNG
+              <i class="bi bi-download"></i> Download PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BAR CHART: LOST ITEMS BY LOCATION -->
+    <div class="col-md-6 d-flex mt-4">
+      <div class="card shadow border-0 w-100">
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h5 class="text-center fw-bold text-danger mb-3">Lost Items by Location</h5>
+          <div style="height: 300px;"><canvas id="locationChart"></canvas></div>
+          <div class="text-center mt-3">
+            <button id="downloadLocationChart" class="btn btn-outline-danger btn-sm fw-semibold">
+              <i class="bi bi-download"></i> Download PNG
             </button>
           </div>
         </div>
@@ -184,15 +200,9 @@ const itemChart = new Chart(document.getElementById('itemChart'), {
   type: 'pie',
   data: {
     labels: ['Lost Items', 'Found Items', 'Claimed Items'],
-    datasets: [{
-      data: [<?= $totalLost ?>, <?= $totalFound ?>, <?= $totalClaims ?>],
-      backgroundColor: ['#dc3545', '#ffc107', '#198754']
-    }]
+    datasets: [{ data: [<?= $totalLost ?>, <?= $totalFound ?>, <?= $totalClaims ?>], backgroundColor: ['#dc3545','#ffc107','#198754'] }]
   },
-  options: {
-    plugins: { legend: { position: 'bottom' } },
-    maintainAspectRatio: false
-  }
+  options: { plugins: { legend: { position: 'bottom' } }, maintainAspectRatio: false }
 });
 
 const monthlyChart = new Chart(document.getElementById('monthlyChart'), {
@@ -200,24 +210,20 @@ const monthlyChart = new Chart(document.getElementById('monthlyChart'), {
   data: {
     labels: <?= json_encode($months) ?>,
     datasets: [
-      {
-        label: 'Lost Items',
-        data: <?= json_encode($lostData) ?>,
-        backgroundColor: '#dc3545'
-      },
-      {
-        label: 'Found Items',
-        data: <?= json_encode($foundData) ?>,
-        backgroundColor: '#ffc107'
-      }
+      { label: 'Lost Items', data: <?= json_encode($lostData) ?>, backgroundColor: '#dc3545' },
+      { label: 'Found Items', data: <?= json_encode($foundData) ?>, backgroundColor: '#ffc107' }
     ]
   },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom' } },
-    scales: { y: { beginAtZero: true } }
-  }
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
+});
+
+const locationChart = new Chart(document.getElementById('locationChart'), {
+  type: 'bar',
+  data: {
+    labels: <?= json_encode($locationNames) ?>,
+    datasets: [{ label: 'Lost Items', data: <?= json_encode($locationCounts) ?>, backgroundColor: '#dc3545' }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
 });
 
 // DOWNLOAD BUTTONS
@@ -227,11 +233,16 @@ document.getElementById('downloadItemChart').addEventListener('click', () => {
   link.href = itemChart.toBase64Image();
   link.click();
 });
-
 document.getElementById('downloadMonthlyChart').addEventListener('click', () => {
   const link = document.createElement('a');
   link.download = 'monthly_chart.png';
   link.href = monthlyChart.toBase64Image();
+  link.click();
+});
+document.getElementById('downloadLocationChart').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'lost_items_by_location.png';
+  link.href = locationChart.toBase64Image();
   link.click();
 });
 </script>

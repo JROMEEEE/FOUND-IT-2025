@@ -40,35 +40,37 @@ $is_admin = $user ? (int)$user['is_admin'] : 0;
 </head>
 
 <body class="bg-light">
-  <!-- NAVBAR -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="../index.php">FOUND-IT</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+  
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="../index.php">FOUND-IT</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-        <ul class="navbar-nav align-items-center">
-          <li class="nav-item mx-2">
-            <a class="nav-link text-white fw-semibold" href="user_dashboard.php">
-              <i class="bi bi-house-door"></i> Dashboard
-            </a>
-          </li>
-          <li class="nav-item mx-2">
-            <a class="nav-link text-white fw-semibold" href="profile.php">
-              <i class="bi bi-person-circle"></i> Profile
-            </a>
-          </li>
-          <li class="nav-item mx-2">
-            <a class="btn btn-light btn-sm fw-semibold text-danger" href="../accounts/logout.php">
-              <i class="bi bi-box-arrow-right"></i> Logout
-            </a>
-          </li>
-        </ul>
-      </div>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav align-items-center">
+        <li class="nav-item mx-2">
+          <a class="nav-link text-white fw-semibold" href="user_dashboard.php">
+            <i class="bi bi-house-door"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item mx-2">
+          <a class="nav-link text-white fw-semibold" href="profile.php">
+            <i class="bi bi-person-circle"></i> Profile
+          </a>
+        </li>
+        <li class="nav-item mx-2">
+          <a class="btn btn-light btn-sm fw-semibold text-danger" href="../accounts/logout.php">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a>
+        </li>
+      </ul>
     </div>
-  </nav>
+  </div>
+</nav>
+
 
   <!-- DASHBOARD CONTENT -->
   <div class="container py-5 mt-5">
