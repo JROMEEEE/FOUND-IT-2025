@@ -49,19 +49,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         $lastRequest = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
-        // REQ COOLDOWN
-        if ($lastRequest) {
-              $lastRequestTime = strtotime($lastRequest['request_date']);
-              $currentTime = time();
-              $timeDiff = $currentTime - $lastRequestTime;
+        // // REQ COOLDOWN
+        // if ($lastRequest) {
+        //       $lastRequestTime = strtotime($lastRequest['request_date']);
+        //       $currentTime = time();
+        //       $timeDiff = $currentTime - $lastRequestTime;
 
-              if ($timeDiff < 180) {
-                  $remaining = 180 - $timeDiff;
-                  $minutes = floor($remaining / 60);
-                  $seconds = $remaining % 60;
-                  $error = "You can only submit another claim for this item after 3 minutes.";
-              }
-          }
+        //       if ($timeDiff < 180) {
+        //           $remaining = 180 - $timeDiff;
+        //           $minutes = floor($remaining / 60);
+        //           $seconds = $remaining % 60;
+        //           $error = "You can only submit another claim for this item after 3 minutes.";
+        //       }
+        //   }
 
 
         // Proceed only if no cooldown or validation errors

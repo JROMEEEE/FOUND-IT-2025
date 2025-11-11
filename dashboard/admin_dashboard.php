@@ -134,7 +134,7 @@ if ($is_admin != 1) {
             <i class="bi bi-upc-scan display-4 text-danger mb-3"></i>
             <h5 class="fw-bold mb-1">Scan Claim QR</h5>
             <p class="text-muted small mb-3">Scan QR codes to verify and release items to owners.</p>
-            <a href="scan_claim_qr.php" class="btn btn-danger btn-sm fw-semibold">
+            <a href="scan_claim.php" class="btn btn-danger btn-sm fw-semibold">
               <i class="bi bi-upc-scan"></i> Scan QR
             </a>
           </div>

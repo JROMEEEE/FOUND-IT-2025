@@ -157,7 +157,7 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
                       <input type="text" name="claimer_name" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                      <label class="form-label fw-semibold">Student ID / Valid ID</label>
+                      <label class="form-label fw-semibold">SR-Code / ID Number</label>
                       <input type="text" name="claimer_id" class="form-control" required>
                     </div>
                     <div class="mb-3">

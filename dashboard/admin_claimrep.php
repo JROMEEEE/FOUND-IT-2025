@@ -28,15 +28,10 @@ try {
     $conn = $database->getConnect();
 
     $query = "
-        SELECT cr.*, 
-               fr.fnd_name, fr.image_path,
-               cv.qr_image_path,
-               u.user_name AS claimer_name, 
-               u.email AS claimer_email
+        SELECT cr.*, fr.fnd_name, fr.image_path, cv.qr_image_path
         FROM claim_request cr
         LEFT JOIN found_report fr ON cr.fnd_id = fr.fnd_id
         LEFT JOIN claim_verification cv ON cr.request_id = cv.request_id
-        LEFT JOIN users_table u ON cr.user_id = u.user_id
         ORDER BY cr.request_date DESC
     ";
     $stmt = $conn->query($query);
@@ -45,7 +40,6 @@ try {
     die("Database error: " . $e->getMessage());
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,13 +47,11 @@ try {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FOUND-IT | Claim Review</title>
 <?php include '../imports.php'; ?>
-
-<!-- DataTables CSS -->
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 <style>
-    div.dataTables_wrapper div.dataTables_filter { margin-bottom: 15px; }
-    div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
-    .qr-preview { width: 100px; height: 100px; object-fit: contain; }
+div.dataTables_wrapper div.dataTables_filter { margin-bottom: 15px; }
+div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
+.qr-preview { width: 100px; height: 100px; object-fit: contain; }
 </style>
 </head>
 <body class="bg-light">
@@ -103,7 +95,6 @@ try {
         </a>
     </div>
 
-    <!-- CLAIM REQUEST TABLE -->
     <div class="card shadow border-0">
         <div class="card-header bg-danger text-white fw-semibold">
             <i class="bi bi-list-ul"></i> Claim Requests
@@ -120,7 +111,7 @@ try {
                                 <th>Ticket Code</th>
                                 <th>Item</th>
                                 <th>Claimer</th>
-                                <th>Email</th>  
+                                <th>Contact</th>  
                                 <th>Status</th>
                                 <th>Requested</th>
                                 <th>Action</th>
@@ -132,14 +123,15 @@ try {
                             <?php
                                 $status = $row['status'] ?? 'pending';
                                 $badgeClass = ($status === 'approved') ? 'success' :
-                                              (($status === 'rejected') ? 'danger' : 'warning');
+                                              (($status === 'rejected') ? 'danger' :
+                                              (($status === 'claimed') ? 'primary' : 'warning'));
                             ?>
                             <tr>
                                 <td><?= $row['request_id'] ?></td>
                                 <td><span class="badge bg-dark"><?= $row['ticket_code'] ?></span></td>
                                 <td><?= htmlspecialchars($row['fnd_name']) ?></td>
                                 <td><?= htmlspecialchars($row['claimer_name']) ?></td>
-                                <td><?= htmlspecialchars($row['claimer_email']) ?></td>
+                                <td><?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></td>
                                 <td><span class="badge bg-<?= $badgeClass ?>"><?= strtoupper($status) ?></span></td>
                                 <td><?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></td>
                                 <td>
@@ -148,7 +140,7 @@ try {
                                             <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal<?= $row['request_id'] ?>">
                                                 <i class="bi bi-search"></i> Review
                                             </button>
-                                        <?php elseif ($status === 'approved'): ?>
+                                        <?php elseif ($status === 'approved' || $status === 'claimed'): ?>
                                             <?php if (!empty($row['qr_image_path'])): ?>
                                                 <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#qrModal<?= $row['request_id'] ?>">
                                                     <i class="bi bi-upc-scan"></i> QR
@@ -183,7 +175,6 @@ try {
                                   </div>
                                   <div class="modal-body">
                                     <div class="row">
-                                      <!-- ITEM IMAGE -->
                                       <div class="col-md-5 text-center">
                                           <?php 
                                               $imgPath = !empty($row['image_path']) ? '../' . $row['image_path'] : '';
@@ -194,13 +185,10 @@ try {
                                               <div class="border rounded p-5 text-muted">No Image Available</div>
                                           <?php endif; ?>
                                       </div>
-
-                                      <!-- ITEM DETAILS & STATEMENT -->
                                       <div class="col-md-7">
                                           <h5 class="fw-bold"><?= htmlspecialchars($row['fnd_name']) ?></h5>
-                                          <p><strong>Claimer:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
-                                          <p><strong>Email:</strong> <?= htmlspecialchars($row['claimer_email']) ?></p>
-                                          <p><strong>Ticket Code:</strong> <?= htmlspecialchars($row['ticket_code']) ?></p>
+                                          <p><strong>Claimer Name:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
+                                          <p><strong>Contact Number:</strong> <?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></p>
                                           <p><strong>Claim Date:</strong> <?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></p>
                                           <hr>
                                           <p><strong>Claimer's Statement:</strong></p>
@@ -209,20 +197,21 @@ try {
                                     </div>
                                   </div>
                                   <div class="modal-footer">
-                                    <!-- APPROVE FORM -->
                                     <form action="approve_claim.php" method="POST" class="d-inline">
                                         <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
                                         <input type="hidden" name="action" value="approve">
                                         <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Approve</button>
                                     </form>
-
-                                    <!-- REJECT FORM -->
                                     <form action="approve_claim.php" method="POST" class="d-inline">
                                         <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
                                         <input type="hidden" name="action" value="reject">
                                         <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle"></i> Reject</button>
                                     </form>
-
+                                    <form action="approve_claim.php" method="POST" class="d-inline">
+                                        <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+                                        <input type="hidden" name="action" value="claimed">
+                                        <button type="submit" class="btn btn-primary"><i class="bi bi-check-square"></i> Mark Claimed</button>
+                                    </form>
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                                   </div>
                                 </div>
@@ -258,7 +247,6 @@ try {
     </div>
 </div>
 
-<!-- JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
