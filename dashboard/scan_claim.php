@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FOUND-IT | Scan Claim QR</title>
 <?php include '../imports.php'; ?>
+<!-- jsQR IMPORT -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
 #video { width: 100%; max-width: 450px; border-radius: 10px; background: #000; }
@@ -105,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
 <!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../index.php">FOUND-IT Admin</a>
+    <a class="navbar-brand fw-bold" href="admin_dashboard.php">FOUND-IT Admin</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -135,6 +136,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
       <div class="text-center">
           <video id="video" autoplay playsinline></video>
           <canvas id="canvas" style="display:none;"></canvas>
+      </div>
+
+      <!-- Manual Input Section -->
+      <div class="mt-3">
+        <h6 class="fw-bold text-danger">Or Enter Ticket Code Manually:</h6>
+        <div class="input-group mb-3">
+          <input type="text" id="manual-ticket-code" class="form-control" placeholder="Enter ticket code" aria-label="Ticket Code">
+          <button class="btn btn-outline-danger" type="button" id="manual-submit">Submit</button>
+        </div>
       </div>
 
       <div id="result-box" class="text-center border rounded p-3 bg-white mt-3">
@@ -170,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
         <p><strong>Request Date:</strong> <span id="modal-request-date"></span></p>
       </div>
       <div class="modal-footer justify-content-center">
-        <button type="button" id="confirm-claim" class="btn btn-success">Yes, Claim</button>
+        <button type="button" id="confirm-claim" class="btn btn-success">Accept Claim</button>
         <button type="button" class="btn btn-secondary">Cancel</button>
       </div>
     </div>
@@ -181,8 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const context = canvas.getContext('2d');
-const qrResult = document.getElementById('qr-result');
-const qrStatus = document.getElementById('qr-status');
+const qrResult = document.getElementById('qr-result'); // SHOWS QR TEXT
+const qrStatus = document.getElementById('qr-status'); // STATUS OF SCANNING (FOR RESCAN)
 
 let lastScanned = null;
 
@@ -207,7 +217,81 @@ const modalRequestDate = document.getElementById('modal-request-date');
 const modalItemImage = document.getElementById('modal-item-image');
 const confirmButton = document.getElementById('confirm-claim');
 
-// Add event listener to ensure modal hides on cancel click and reset lastScanned
+// MANUAL INPUT (IF CAM IS UNAVAILABLE)
+const manualTicketCode = document.getElementById('manual-ticket-code');
+const manualSubmit = document.getElementById('manual-submit');
+
+manualSubmit.addEventListener('click', () => {
+    const ticketCode = manualTicketCode.value.trim();
+    if (ticketCode) {
+        processTicketCode(ticketCode);
+    } else {
+        qrStatus.textContent = "Please enter a ticket code.";
+        qrStatus.style.color = "red";
+    }
+});
+
+// Function to process ticket code (used by both scan and manual input)
+function processTicketCode(ticketCode) {
+    qrResult.textContent = ticketCode;
+    lastScanned = ticketCode;
+
+    // Fetch claim details
+    fetch("", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "action=get_details&ticket_code=" + encodeURIComponent(ticketCode)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) { // SHOW MODAL IF VALID
+            modalTicketCode.textContent = ticketCode;
+            modalItemName.textContent = data.item_name;
+            modalClaimerName.textContent = data.claimer_name;
+            modalClaimerId.textContent = data.claimer_id;
+            modalRequestDate.textContent = new Date(data.request_date).toLocaleString();
+            if (data.image_path) { // SHOW IF THERE IS IMAGE (SINCE OPTIONAL)
+                modalItemImage.src = '../' + data.image_path;
+                modalItemImage.style.display = 'block';
+            } else {
+                modalItemImage.style.display = 'none';
+            }
+            confirmModal.show();
+
+            confirmButton.onclick = () => { // GET CLICK ON CLAIM BUTTON
+                fetch("", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "ticket_code=" + encodeURIComponent(ticketCode)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    qrStatus.textContent = data.message;
+                    qrStatus.style.color = data.success ? "green" : "red";
+                    confirmModal.hide();
+                    lastScanned = null;
+                })
+                .catch(() => {
+                    qrStatus.textContent = "Error contacting server.";
+                    qrStatus.style.color = "red";
+                    confirmModal.hide();
+                    lastScanned = null;
+                });
+            };
+        } else { // IF ERROR ALLOW SCANNING AGAIN
+            qrStatus.textContent = data.message;
+            qrStatus.style.color = "red";
+            lastScanned = null;
+        }
+    })
+    .catch(() => {  // IF ERROR ALLOW SCANNING AGAIN
+        qrStatus.textContent = "Error fetching details.";
+        qrStatus.style.color = "red";
+        lastScanned = null;
+    });
+}
+
+// HIDE MODAL ON CANCEL
 document.querySelector('#confirmModal .btn-secondary').addEventListener('click', () => {
     lastScanned = null;
     confirmModal.hide();
@@ -216,72 +300,18 @@ document.querySelector('#confirmModal .btn-secondary').addEventListener('click',
 function scanFrame() {
     requestAnimationFrame(scanFrame);
 
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) return; // WAIT FOR DATA
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    
+    context.drawImage(video, 0, 0, canvas.width, canvas.height); // GET LIVE FEED TO CANVAS
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height); // GET PIXEL DATA FROM CANVAS
 
-    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" });
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "attemptBoth" }); // SCANS QR PIXELS
 
-    if (code && code.data !== lastScanned) {
-        lastScanned = code.data;
-        qrResult.textContent = code.data;
-
-        // Fetch claim details
-        fetch("", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "action=get_details&ticket_code=" + encodeURIComponent(code.data)
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                modalTicketCode.textContent = code.data;
-                modalItemName.textContent = data.item_name;
-                modalClaimerName.textContent = data.claimer_name;
-                modalClaimerId.textContent = data.claimer_id;
-                modalRequestDate.textContent = new Date(data.request_date).toLocaleString();
-                if (data.image_path) {
-                    modalItemImage.src = '../' + data.image_path;
-                    modalItemImage.style.display = 'block';
-                } else {
-                    modalItemImage.style.display = 'none';
-                }
-                confirmModal.show();
-
-                confirmButton.onclick = () => {
-                    fetch("", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: "ticket_code=" + encodeURIComponent(code.data)
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        qrStatus.textContent = data.message;
-                        qrStatus.style.color = data.success ? "green" : "red";
-                        confirmModal.hide();
-                        lastScanned = null; // ready for next scan
-                    })
-                    .catch(() => {
-                        qrStatus.textContent = "Error contacting server.";
-                        qrStatus.style.color = "red";
-                        confirmModal.hide();
-                        lastScanned = null;
-                    });
-                };
-            } else {
-                qrStatus.textContent = data.message;
-                qrStatus.style.color = "red";
-                lastScanned = null;
-            }
-        })
-        .catch(() => {
-            qrStatus.textContent = "Error fetching details.";
-            qrStatus.style.color = "red";
-            lastScanned = null;
-        });
+    if (code && code.data !== lastScanned) { // AVOID DUPLICATE SCANS
+        processTicketCode(code.data); // CONTAINS DECODED QR TEXT
     }
 }
 
