@@ -1,14 +1,14 @@
 <?php
-session_start();
+session_start(); //stores user info
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 1); //for debugging, displaying all errors
 
 include '../dbconnect.php';
-$database = new Database();
-$conn = $database->getConnect();
+$database = new Database(); // new instance of database class
+$conn = $database->getConnect(); // gets the pdo connection
 
 if (!$conn) {
-    die("Database connection failed.");
+    die("Database connection failed."); // if connection fails
 }
 
 // SESSION TIMEOUT: 1 hour (3600 seconds)
@@ -27,18 +27,18 @@ $session_lifetime = 3600;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST["email"]);
-    $password = trim($_POST["password"]);
+    $password = trim($_POST["password"]); //remove spaces
 
     if (empty($email) || empty($password)) {
-        $error = "Please fill in all fields.";
+        $error = "Please fill in all fields."; //making sure fields are filled in 
     } else {
         try {
             $stmt = $conn->prepare("SELECT user_id, user_name, email, password, is_admin FROM users_table WHERE email = ? LIMIT 1");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->execute([$email]); 
+            $user = $stmt->fetch(PDO::FETCH_ASSOC); //fetch result as an associative array
 
             if ($user) {
-                // Verify plain or hashed passwords
+                // checking sa database nung password kung same 
                 if ($password === $user['password'] || password_verify($password, $user['password'])) {
                     // SET SESSION DATA
                     $_SESSION['user_id'] = $user['user_id'];
@@ -70,18 +70,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <title>FOUND-IT | Login</title>
   <?php include '../imports.php'; ?>
 </head>
-<body class="bg-light d-flex flex-column align-items-center justify-content-center vh-100">
 
-  <div class="card shadow-lg border-0" style="max-width: 400px; width: 100%;">
-    <div class="card-header bg-danger text-white text-center py-3">
-      <h4 class="mb-0 fw-bold">FOUND-IT Login</h4>
-    </div>
+<body class="login-page"> 
 
-    <div class="card-body p-4">
+<div class="login-wrapper">
+      <!-- Left Side -->
+  <div class="left-panel">
+</div>
+
+    <!-- Right Side -->
+<div class = "right-panel">
+  <h2>Welcome Back </h2>
+        <p class="text-muted mb-4">Login to your account</p>
+
       <?php if (!empty($error)): ?>
         <div class="alert alert-danger text-center"><?php echo htmlspecialchars($error); ?></div>
-      <?php endif; ?>
-
+      <?php endif; ?> 
+ 
       <form method="POST" action="">
         <div class="mb-3">
           <label for="email" class="form-label fw-semibold">Email address</label>
@@ -103,21 +108,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
         <button type="submit" class="btn btn-danger w-100 fw-semibold">Login</button>
+
+        <div class="text-center text-muted mt-4">
+          Don't have an account?
+          <a href="register.php">Register now</a>
+        </div>
+
+        <div class="mt-3 text-center">
+          <a href="../index.php" class="text-secondary small text-decoration-none">
+            <i class="bi bi-house-door"></i> Dashboard
+          </a>
+        </div>
       </form>
     </div>
-
-    <div class="card-footer text-center bg-white py-3">
-      <a href="register.php" class="btn btn-outline-danger fw-semibold w-100">
-        Register
-      </a>
-    </div>
-  </div>
-
-  <div class="mt-4 text-center">
-    <a href="../index.php" class="btn btn-outline-secondary fw-semibold">
-      <i class="bi bi-house-door"></i> Back to Home
-    </a>
-  </div>
+</div>
 
 </body>
 </html>

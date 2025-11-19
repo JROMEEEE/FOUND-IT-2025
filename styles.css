@@ -1,0 +1,198 @@
+/* LOGIN PAGE LAYOUT */
+body.login-page, body.register-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #e6f3f8;
+}
+
+
+.login-wrapper {
+  display: flex;
+  max-width: 1150px;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+/* LEFT SIDE */
+.left-panel {
+background: url('BSU\ Lipa\ Campus.jfif') center center/cover no-repeat;
+  flex: 1;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.left-panel h1 {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.left-panel p {
+  font-size: 1rem;
+  max-width: 250px;
+}
+
+/* RIGHT SIDE */
+.right-panel {
+  flex: 1;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.right-panel h2 {
+  font-weight: 700;
+}
+
+.right-panel p {
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+
+
+.btn-danger {
+  background-color: #dc3545;
+  border: none;
+  transition: 0.3s;
+}
+
+.btn-danger:hover {
+  background-color: #bb2d3b;
+}
+
+
+/* Register */
+.heading-wrapper {
+  display: flex;           /* horizontal alignment */
+  align-items: center;     /* vertical alignment */
+  gap: 10px;               /* space between heading and icon */
+}
+
+.heading-wrapper h2 {
+  margin: 0;               /* remove default margin */
+  font-weight: 700;
+}
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  margin-left: auto;   /* keeps the arrow at far end */
+}
+
+.tooltip-wrapper i {
+  font-size: 1.5rem;       /* make arrow bigger */
+  color: #dc3545;           /* red color */
+  cursor: pointer;
+}
+
+
+.tooltip-wrapper .tooltip-text {
+  visibility: hidden;   /* hide by default */
+  opacity: 0;
+  width: max-content;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 5px;
+
+  position: absolute;
+  bottom: 125%;        /* above the icon */
+  left: 50%;
+  transform: translateX(-50%);
+
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+.register-wrapper {
+  display: flex;
+  max-width: 1150px;
+  width: 100%;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.register-wrapper .left-panel {
+background: url('BSU\ Lipa\ Campus.jfif') center;
+  flex: 1;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  text-align: center;
+  
+}
+
+.register-wrapper .left-panel h1 {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.register-wrapper .left-panel p {
+  font-size: 1rem;
+  max-width: 250px;
+}
+
+/* Right panel for the register form */
+.register-wrapper .right-panel {
+  flex: 1;
+  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.register-wrapper .right-panel h2 {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.register-wrapper .right-panel p {
+  color: #6c757d;
+  margin-bottom: 20px;
+}
+
+/* Form spacing */
+.register-wrapper form .mb-3 {
+  margin-bottom: 1rem;
+}
+
+/* Button consistency */
+.register-wrapper .btn-danger {
+  background-color: #dc3545;
+  border: none;
+  transition: 0.3s;
+}
+
+.register-wrapper .btn-danger:hover {
+  background-color: #bb2d3b;
+}
+
+/* Add small space between bottom links */
+.register-wrapper .text-center a {
+  margin-top: 10px;
+  display: inline-block;
+}
