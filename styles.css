@@ -1,0 +1,40 @@
+/* HERO SMALL BANNER */
+.hero-box {
+  background: linear-gradient(rgba(220,53,69,0.85), rgba(220,53,69,0.85)),
+              url('assets/bsulipa.jpg') center/cover no-repeat;
+  padding: 40px 20px;          /* banner height */
+  border-radius: 20px;         /* rounded corners */
+  max-width: 100%;            /* width of the banner */
+  margin: 40px auto; 
+  margin-top: 100px;
+
+}
+
+.hero-box p {
+  margin-top: -10px;   /* move upward */
+
+}
+
+.about-box{
+ border-radius: 20px; 
+ background: linear-gradient(rgba(220,53,69,0.85), rgba(220,53,69,0.85)),
+              url('assets/bsulipa.jpg') center/cover no-repeat; 
+}
+
+.about-text {
+  color: white; /* text color */
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+}
+
+
+
+
+
+.features-box{
+   
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 20px;
+}

@@ -27,37 +27,48 @@
     </div>
   </nav>
 
+  <div class="container mt-5">
+    
   <!-- HERO -->
-  <section id="home" class="d-flex align-items-center text-center text-white" style="height:100vh; background: linear-gradient(rgba(220,53,69,0.85), rgba(220,53,69,0.85)), url('assets/bsulipa.jpg') center/cover no-repeat;">
+<section id="home" class=" hero-box  text-left text-white" style=  "background: linear-gradient(rgba(220,53,69,0.85), rgba(220,53,69,0.85)), url('assets/bsulipa.jpg') center/cover no-repeat;">
     <div class="container">
-      <h1 class="display-4 fw-bold mb-3">FOUND-IT</h1>
+      <h1 class="display-4 fw-bold mb-2">FOUND-IT</h1>
       <p class="lead mb-4">BSU Lipa Centralized Lost & Found System</p>
-      <a href="accounts/login.php" class="btn btn-light btn-lg fw-semibold">Go to Dashboard</a>
+      <a href="accounts/login.php" class="btn btn-light btn-lg fw-semibold" style="margin-top: 30px;">Go to Dashboard</a>
     </div>
-  </section>
+</section>
 
-  <!-- ABOUT -->
-  <section id="about" class="py-5">
-    <div class="container">
-      <div class="row align-items-center">
+<!-- ABOUT -->
+<section id="about" class="py-5">
+  <div class="container">
+      <div class="row">
+
+        <!-- Image Column -->
         <div class="col-md-6 mb-4 mb-md-0">
           <img src="assets/bsulipa.jpg" class="img-fluid rounded shadow" alt="Lost and Found">
         </div>
+
+        <!-- Text Column (Red Box) -->
         <div class="col-md-6">
-          <h2 class="fw-bold mb-3 text-danger">About FOUND-IT</h2>
-          <p class="text-muted">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio, eos molestiae! Perspiciatis culpa voluptatibus corporis rem fuga, consectetur quas. In, quae tempora voluptas veniam maiores consectetur repudiandae ipsum porro officia.
-          </p>
-          <p class="text-muted">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam aperiam fugit possimus rem laboriosam quo odio corporis reiciendis! Error recusandae exercitationem architecto? Dolor ab consequatur atque! Earum cum quaerat impedit.
-          </p>
-        </div>
+          <div class="about-text p-4 rounded bg-danger h-100">
+            <h2 class="fw-bold mb-3 text-white">About FOUND-IT</h2>
+            <p class="text-white">
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Distinctio, eos molestiae! Perspiciatis culpa voluptatibus corporis rem fuga, consectetur quas. In, quae tempora voluptas veniam maiores consectetur repudiandae ipsum porro officia.
+            </p>
+            <p class="text-white">
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Numquam aperiam fugit possimus rem laboriosam quo odio corporis reiciendis! Error recusandae exercitationem architecto? Dolor ab consequatur atque! Earum cum quaerat impedit.
+            </p>
+          </div>
+
+
       </div>
     </div>
-  </section>
+  </div>
+</section>
+
 
   <!-- FEATURES -->
-  <section id="features" class="py-5 bg-white">
+  <section id="features" class="py-5 bg-white features-box">
     <div class="container text-center">
       <h2 class="fw-bold text-danger mb-5">Key Features</h2>
       <div class="row g-4">
@@ -99,6 +110,7 @@
       </div>
     </div>
   </section>
+  </div>
 
   <!-- Contact Section
   <section id="contact" class="py-5 bg-light">
@@ -126,7 +138,7 @@
   </section> -->
 
   <!-- FOOTER -->
-  <footer class="bg-danger text-white text-center py-3">
+  <footer class=" text-muted text-center py-3">
     <div class="container">
       <small>FOUND-IT | BSU Lipa Centralized Lost & Found System. This is for educational purposes only.</small>
     </div>
