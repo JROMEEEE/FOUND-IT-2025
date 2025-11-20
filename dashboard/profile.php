@@ -11,21 +11,12 @@ $database = new Database();
 $conn = $database->getConnect();
 $user_id = $_SESSION['user_id'];
 
-$stmt = $conn->prepare("SELECT user_name, sr_code, email FROM users_table WHERE user_id = ?");
+// Fetch user info including is_admin
+$stmt = $conn->prepare("SELECT user_name, sr_code, email, is_admin FROM users_table WHERE user_id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// FOUND REPORTS
-$stmt = $conn->prepare("
-    SELECT fnd_id, fnd_name, fnd_datetime, image_path, fnd_status
-    FROM found_report
-    WHERE user_id = ?
-    ORDER BY fnd_datetime DESC
-");
-$stmt->execute([$user_id]);
-$found_reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// CLAIM REQUESTS
+// CLAIM REQUESTS (available to all users)
 $stmt = $conn->prepare("
     SELECT cr.request_id, cr.ticket_code, cr.status, cr.request_date, fr.fnd_name
     FROM claim_request cr
@@ -35,59 +26,60 @@ $stmt = $conn->prepare("
 ");
 $stmt->execute([$user_id]);
 $claim_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// FOUND REPORTS (admin only)
+$found_reports = [];
+if ($user['is_admin']) {
+    $stmt = $conn->prepare("
+        SELECT fnd_id, fnd_name, fnd_datetime, image_path, fnd_status
+        FROM found_report
+        ORDER BY fnd_datetime DESC
+    ");
+    $stmt->execute();
+    $found_reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Your Profile | FOUND-IT</title>
-  <?php include '../imports.php'; ?>
+<meta charset="UTF-8">
+<title>Your Profile | FOUND-IT</title>
+<?php include '../imports.php'; ?>
 
-  <!-- DataTables CSS -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
 
-  <style>
-    body {
-        padding-top: 80px;
-    }
-    div.dataTables_wrapper div.dataTables_filter {
-        margin-bottom: 15px;
-    }
-    div.dataTables_wrapper div.dataTables_paginate {
-        margin-top: 15px;
-    }
-    table.dataTable td, table.dataTable th {
-        vertical-align: middle;
-    }
-    .card {
-        border-radius: 10px;
-    }
-  </style>
-
+<style>
+body { padding-top: 80px; }
+div.dataTables_wrapper div.dataTables_filter { margin-bottom: 15px; }
+div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
+table.dataTable td, table.dataTable th { vertical-align: middle; }
+.card { border-radius: 10px; }
+</style>
 </head>
 
 <body class="bg-light">
 
 <!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
-  <div class="container">
+<div class="container">
     <a class="navbar-brand fw-bold" href="user_dashboard.php">FOUND-IT</a>
     <div class="d-flex gap-2">
-      <a href="user_dashboard.php" class="btn btn-outline-light btn-sm fw-semibold">
-        <i class="bi bi-house-door"></i> Dashboard
-      </a>
-      <a href="../accounts/logout.php" class="btn btn-light btn-sm text-danger fw-semibold">
-        <i class="bi bi-box-arrow-right"></i> Logout
-      </a>
+        <a href="user_dashboard.php" class="btn btn-outline-light btn-sm fw-semibold">
+            <i class="bi bi-house-door"></i> Dashboard
+        </a>
+        <a href="../accounts/logout.php" class="btn btn-light btn-sm text-danger fw-semibold">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
     </div>
-  </div>
+</div>
 </nav>
 
-
 <div class="container py-5">
+
 <!-- USER INFO -->
 <div class="card shadow-sm mb-5 mx-auto" style="max-width: 600px;">
     <div class="card-body">
@@ -100,88 +92,101 @@ $claim_requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </div>
 
-
-
-  <!-- FOUND REPORTS -->
-  <div class="card shadow-sm mb-5">
+<?php if ($user['is_admin']): ?>
+<!-- FOUND REPORTS (Admin Only) -->
+<div class="card shadow-sm mb-5">
     <div class="card-header bg-danger text-white fw-semibold">
-      <i class="bi bi-binoculars"></i> Items You Reported Found
+        <i class="bi bi-binoculars"></i> All Found Items
     </div>
     <div class="card-body">
-      <?php if (empty($found_reports)): ?>
-        <div class="text-muted fst-italic text-center py-3">You have not reported any found items.</div>
-      <?php else: ?>
-        <div class="table-responsive mt-3">
-          <table id="foundReportsTable" class="table table-hover align-middle">
-            <thead class="table-danger">
-              <tr>
-                <th>Item</th>
-                <th>Status</th>
-                <th>Date Reported</th>
-                <th>Image</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($found_reports as $row): ?>
-                <tr>
-                  <td><?= htmlspecialchars($row['fnd_name']); ?></td>
-                  <td><span class="badge bg-dark text-uppercase"><?= htmlspecialchars($row['fnd_status']); ?></span></td>
-                  <td><?= date("M d, Y h:i A", strtotime($row['fnd_datetime'])); ?></td>
-                  <td>
-                    <?php if ($row['image_path'] && file_exists("../" . $row['image_path'])): ?>
-                      <img src="../<?= htmlspecialchars($row['image_path']); ?>" class="rounded" style="height:60px; object-fit:cover;">
-                    <?php else: ?>
-                      <span class="text-muted">No Image</span>
-                    <?php endif; ?>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
+        <?php if (empty($found_reports)): ?>
+            <div class="text-muted fst-italic text-center py-3">No found items reported yet.</div>
+        <?php else: ?>
+            <div class="table-responsive mt-3">
+                <table id="foundReportsTable" class="table table-hover align-middle">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Date Reported</th>
+                            <th>Image</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($found_reports as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['fnd_name']); ?></td>
+                            <td><span class="badge bg-dark text-uppercase"><?= htmlspecialchars($row['fnd_status']); ?></span></td>
+                            <td><?= date("M d, Y h:i A", strtotime($row['fnd_datetime'])); ?></td>
+                            <td>
+                                <?php if ($row['image_path'] && file_exists("../" . $row['image_path'])): ?>
+                                    <img src="../<?= htmlspecialchars($row['image_path']); ?>" class="rounded" style="height:60px; object-fit:cover;">
+                                <?php else: ?>
+                                    <span class="text-muted">No Image</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
-  </div>
+</div>
+<?php endif; ?>
 
-  <!-- CLAIM REQUESTS -->
-    <div class="card shadow-sm mb-5">
+<!-- CLAIM REQUESTS -->
+<div class="card shadow-sm mb-5">
     <div class="card-header bg-danger text-white fw-semibold">
         <i class="bi bi-ticket-perforated"></i> Your Claim Requests
     </div>
     <div class="card-body">
         <?php if (empty($claim_requests)): ?>
-        <div class="text-muted fst-italic text-center py-3">You have not submitted any claim requests.</div>
+            <div class="text-muted fst-italic text-center py-3">You have not submitted any claim requests.</div>
         <?php else: ?>
-        <div class="table-responsive mt-3">
-            <table id="claimRequestsTable" class="table table-hover align-middle">
-            <thead class="table-danger">
-                <tr>
-                <th>Item</th>
-                <th>Status</th>
-                <th>Date Requested</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($claim_requests as $row): ?>
-                <?php
-                $badgeClass = match($row['status']) {
-                    'approved' => 'success',
-                    'rejected' => 'danger',
-                    default => 'secondary',
-                };
-                ?>
-                <tr>
-                    <td><?= htmlspecialchars($row['fnd_name']); ?></td>
-                    <td><span class="badge bg-<?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
-                    <td><?= date("M d, Y h:i A", strtotime($row['request_date'])); ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-            </table>
-        </div>
+            <div class="table-responsive mt-3">
+                <table id="claimRequestsTable" class="table table-hover align-middle">
+                    <thead class="table-danger">
+                        <tr>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Date Requested</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($claim_requests as $row): ?>
+                        <?php
+                        $badgeClass = match($row['status']) {
+                            'approved' => 'success',
+                            'rejected' => 'danger',
+                            default => 'secondary',
+                        };
+                        ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['fnd_name']); ?></td>
+                            <td><span class="badge bg-<?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
+                            <td><?= date("M d, Y h:i A", strtotime($row['request_date'])); ?></td>
+                            <td>
+                                <?php if ($row['status'] === 'approved'): ?>
+                                    <form method="POST" action="generate_pdf.php" target="_blank">
+                                        <input type="hidden" name="request_id" value="<?= $row['request_id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="text-muted">N/A</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php endif; ?>
     </div>
-    </div>
+</div>
 
 </div>
 
@@ -196,7 +201,7 @@ $(document).ready(function() {
 
     $('#claimRequestsTable').DataTable({
         pageLength: 5,
-        order: [[3, 'desc']],
+        order: [[2, 'desc']],
         responsive: true,
         language: { search: "_INPUT_", searchPlaceholder: "Search claims..." }
     });

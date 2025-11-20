@@ -24,13 +24,13 @@ $db = new Database();
 $conn = $db->getConnect();
 
 try {
-    // === TOTAL COUNTS === //
+    // TOTAL COUNTS
     $totalLost = $conn->query("SELECT COUNT(*) AS total FROM lost_report")->fetch(PDO::FETCH_ASSOC)['total'];
     $totalFound = $conn->query("SELECT COUNT(*) AS total FROM found_report")->fetch(PDO::FETCH_ASSOC)['total'];
     $totalClaims = $conn->query("SELECT COUNT(*) AS total FROM claim_request WHERE status='approved'")->fetch(PDO::FETCH_ASSOC)['total'];
     $totalClaimed = $conn->query("SELECT COUNT(*) AS total FROM claim_request WHERE status='claimed'")->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // === MONTHLY LOST & FOUND DATA === //
+    // MONTHLY LOST & FOUND DATA
     $stmt = $conn->query("
         SELECT MONTH(lost_datetime) AS month, COUNT(*) AS lost_count, 0 AS found_count
         FROM lost_report
@@ -42,7 +42,7 @@ try {
     ");
     $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Merge monthly data
+    // MERGE MONTH DATA
     $monthNames = [1=>'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     $months = [];
     $lostData = [];
