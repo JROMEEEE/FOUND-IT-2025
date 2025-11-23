@@ -1,0 +1,12 @@
+
+#categoryFilter {
+    height: calc(1.5em + .75rem + 2px); /* match Bootstrap input height */
+    padding: .375rem .75rem;
+    font-size: 0.875rem;
+}
+
+.dataTables_filter input,
+#categoryFilter {
+    height: 38px; /* typical Bootstrap 5 input height */
+    line-height: 1.5;
+}

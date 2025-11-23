@@ -2,6 +2,9 @@
   session_start();
   include '../dbconnect.php';
 
+    $database = new Database();
+  $conn = $database->getConnect();
+
   // SESSION TIMEOUT (1 hour)
   $session_lifetime = 3600;
 
@@ -13,6 +16,49 @@
       exit;
   }
   $_SESSION['last_activity'] = time(); // Refresh session time
+
+   try {
+    // TOTAL COUNTS
+    $totalLost = $conn->query("SELECT COUNT(*) AS total FROM lost_report")->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalFound = $conn->query("SELECT COUNT(*) AS total FROM found_report")->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalClaims = $conn->query("SELECT COUNT(*) AS total FROM claim_request WHERE status='approved'")->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalClaimed = $conn->query("SELECT COUNT(*) AS total FROM claim_request WHERE status='claimed'")->fetch(PDO::FETCH_ASSOC)['total'];
+
+    // MONTHLY LOST & FOUND DATA
+    $stmt = $conn->query("
+        SELECT MONTH(lost_datetime) AS month, COUNT(*) AS lost_count, 0 AS found_count
+        FROM lost_report
+        GROUP BY MONTH(lost_datetime)
+        UNION ALL
+        SELECT MONTH(fnd_datetime) AS month, 0 AS lost_count, COUNT(*) AS found_count
+        FROM found_report
+        GROUP BY MONTH(fnd_datetime)
+    ");
+    $rawData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // MERGE MONTH DATA
+    $monthNames = [1=>'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    $months = [];
+    $lostData = [];
+    $foundData = [];
+
+    foreach ($monthNames as $num => $name) {
+        $lost = 0;
+        $found = 0;
+        foreach ($rawData as $row) {
+            if ($row['month'] == $num) {
+                $lost += $row['lost_count'];
+                $found += $row['found_count'];
+            }
+        }
+        $months[] = $name;
+        $lostData[] = $lost;
+        $foundData[] = $found;
+    }
+  } catch (PDOException $e) {
+    echo "Database error: " . $e->getMessage(); 
+    exit;
+  }
 
   // FETCH USER INFO
   $user_id = $_SESSION['user_id'];
@@ -46,13 +92,14 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
           <ul class="navbar-nav align-items-center">
             <li class="nav-item mx-2">
-              <a class="nav-link text-white fw-semibold" href="admin_dashboard.php">
+              <a class="nav-link text-white fw-semibold" href="../index.php">
                 <i class="bi bi-house-door"></i> Dashboard
               </a>
             </li>
+
 
             <li class="nav-item mx-2">
             <a class="nav-link text-white fw-semibold" href="profile.php">
@@ -83,8 +130,43 @@
       </div>
     </div>
       
+      <!-- SUMMARY CARDS -->
+  <div class="row text-center mb-5">
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="fw-bold text-danger">Total Lost Items</h5>
+          <h2 class="fw-bold"><?= $totalLost ?></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="fw-bold text-warning">Total Found Items</h5>
+          <h2 class="fw-bold"><?= $totalFound ?></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="fw-bold text-success">Total Claims Approved</h5>
+          <h2 class="fw-bold"><?= $totalClaims ?></h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h5 class="fw-bold text-primary">Total Items Claimed</h5>
+          <h2 class="fw-bold"><?= $totalClaimed ?></h2>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <div class="row g-4 justify-content-center">
+      <div class="row g-4 justify-content-center" style="margin-top: -50px;">
         <!-- USER MANAGEMENT -->
         <div class="col-md-4">
           <div class="card shadow border-0 h-100">
@@ -99,7 +181,7 @@
           </div>
         </div>
 
-        <!-- ITEM MANAGEMENT -->
+        <!-- TRANSACTION LOGBOOK -->
         <div class="col-md-4">
           <div class="card shadow border-0 h-100">
             <div class="card-body text-center">

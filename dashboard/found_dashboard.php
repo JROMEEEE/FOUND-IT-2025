@@ -122,8 +122,13 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <title>FOUND-IT | Found Items Dashboard</title>
 <?php include '../imports.php'; ?>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+
 </head>
+
+
 <body class="bg-light">
+  
 
 <!-- NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
@@ -160,8 +165,28 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <p class="text-muted">Search items, filter by category or claim status, or submit a claim.</p>
   </div>
 
+  <div class="text-left " style="margin-top: 5px; margin-bottom: 20px;">
+               <div class="btn-group mb-3" role="group">
+    <a href="found_dashboard.php?status=&category_id=<?= $selectedCategoryId ?>"
+       class="btn <?= $selectedStatus === null || $selectedStatus === '' ? 'btn-danger text-white' : 'btn-outline-danger' ?>">
+        All
+    </a>
+
+    <a href="found_dashboard.php?status=unclaimed&category_id=<?= $selectedCategoryId ?>"
+       class="btn <?= $selectedStatus === 'unclaimed' ? 'btn-danger text-white' : 'btn-outline-danger' ?>">
+        Unclaimed
+    </a>
+
+    <a href="found_dashboard.php?status=claimed&category_id=<?= $selectedCategoryId ?>"
+       class="btn <?= $selectedStatus === 'claimed' ? 'btn-danger text-white' : 'btn-outline-danger' ?>">
+        Claimed
+    </a>
+</div>
+
+                </div>
+
   <!-- TABLE -->
-  <div class="table-responsive bg-white p-3 shadow-sm rounded">
+  <div class="table-responsive bg-white p-3 shadow-sm ">
     <table id="foundTable" class="table table-striped table-hover align-middle">
       <thead>
         <tr>
@@ -178,12 +203,8 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
               </select>
 
               <!-- Status Buttons -->
-              <a href="found_dashboard.php?status=&category_id=<?= $selectedCategoryId ?>" 
-                 class="btn btn-outline-dark <?= !$selectedStatus ? 'btn-danger text-white' : '' ?>">All Statuses</a>
-              <a href="found_dashboard.php?status=unclaimed&category_id=<?= $selectedCategoryId ?>" 
-                 class="btn btn-outline-warning <?= $selectedStatus === 'unclaimed' ? 'btn-danger text-white' : '' ?>">Unclaimed</a>
-              <a href="found_dashboard.php?status=claimed&category_id=<?= $selectedCategoryId ?>" 
-                 class="btn btn-outline-success <?= $selectedStatus === 'claimed' ? 'btn-danger text-white' : '' ?>">Claimed</a>
+               
+                
             </div>
           </th>
         </tr>
@@ -203,11 +224,9 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <td><?= htmlspecialchars($item['category_name']) ?></td>
             <td><?= htmlspecialchars($item['location_name']) ?></td>
             <td><?= date("F j, Y, g:i A", strtotime($item['fnd_datetime'])) ?></td>
-            <td>
-              <span class="badge <?= $item['fnd_status'] === 'unclaimed' ? 'bg-warning text-dark' : ($item['fnd_status'] === 'claimed' ? 'bg-success' : 'bg-secondary') ?>">
-                <?= ucfirst($item['fnd_status']) ?>
-              </span>
-            </td>
+            <td style="color: <?= $item['fnd_status'] === 'pending' ? 'gray' : ($item['fnd_status'] === 'unclaimed' ? 'red' : ($item['fnd_status'] === 'claimed' ? 'green' : 'black')); ?>; font-weight: bold; text-transform: uppercase;">
+                                                    <?= htmlspecialchars($item['fnd_status']); ?>
+                                                </td>
             <td>
               <?php if($item['fnd_status'] === 'unclaimed'): ?>
                 <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#claimModal<?= $item['fnd_id'] ?>">
