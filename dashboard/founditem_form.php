@@ -36,7 +36,7 @@ if ($is_admin != 1) {
 $categories = $conn->query("SELECT category_id, category_name FROM item_category")->fetchAll(PDO::FETCH_ASSOC);
 $locations = $conn->query("SELECT location_id, location_name FROM location_table")->fetchAll(PDO::FETCH_ASSOC);
 
-// ------------------ ACTIVITY LOG FUNCTION ------------------
+// ACTIVITY LOG FUNCTION
 function log_activity($conn, $user_id, $action, $table_name, $record_id = null, $details = null) {
     $stmt = $conn->prepare("
         INSERT INTO activity_log (user_id, action, table_name, record_id, details)
@@ -51,7 +51,7 @@ function log_activity($conn, $user_id, $action, $table_name, $record_id = null, 
     ]);
 }
 
-// ------------------ FORM SUBMISSION ------------------
+// FORM SUBMISSION
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $fnd_name = trim($_POST['fnd_name']);
     $fnd_desc = trim($_POST['fnd_desc']);

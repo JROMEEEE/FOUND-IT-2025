@@ -2,7 +2,7 @@
 session_start();
 require_once '../dbconnect.php';
 require_once '../phpqrcode/qrlib.php';
-require_once '../apikeys.php'; // IPROG_API_TOKEN
+require_once '../apikeys.php';
 
 if (!isset($_POST['request_id'], $_POST['action'])) {
     header("Location: admin_claimrep.php");

@@ -260,7 +260,7 @@ $(document).ready(function () {
     // Custom filter using data-status attribute
     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
         let selectedStatus = $('.filter-btn.active').data('status');
-        if (selectedStatus === "") return true; // show all
+        if (selectedStatus === "") return true;
 
         let rowStatus = table.row(dataIndex).node().querySelector('td:nth-child(6)').getAttribute('data-status');
         return rowStatus == selectedStatus;
