@@ -22,7 +22,7 @@ if ($is_admin != 1) {
     exit;
 }
 
-// --- ACTIVITY LOG FUNCTION ---
+// ACTIVITY LOG FUNCTION
 function logActivity($user_id, $action, $table_name, $record_id = null, $details = null) {
     try {
         $database = new Database();
@@ -44,7 +44,7 @@ function logActivity($user_id, $action, $table_name, $record_id = null, $details
     }
 }
 
-// --- HANDLE AJAX REQUEST TO GET CLAIM DETAILS ---
+// HANDLE AJAX REQUEST TO GET CLAIM DETAILS
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_details') {
     $ticket_code = $_POST['ticket_code'];
     try {
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     exit;
 }
 
-// --- HANDLE AJAX REQUEST TO CLAIM TICKET ---
+// HANDLE AJAX REQUEST TO CLAIM TICKET
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
     $ticket_code = $_POST['ticket_code'];
     try {

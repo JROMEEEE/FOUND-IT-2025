@@ -170,7 +170,7 @@ sendBtn.onclick = () => {
 
     ws.send(JSON.stringify({
         type: "chat_message",
-        sender_id: adminId, // unified admin ID
+        sender_id: adminId,
         sender_name: adminName,
         receiver_id: targetUserId,
         is_admin: 1,

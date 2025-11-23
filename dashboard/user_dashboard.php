@@ -23,7 +23,7 @@ $user_id = $_SESSION['user_id'];
 $user_name = htmlspecialchars($_SESSION['user_name']);
 $email = htmlspecialchars($_SESSION['email']);
 
-// ✅ FETCH admin status from DB
+// FETCH admin status from DB
 $stmt = $pdo->prepare("SELECT is_admin FROM users_table WHERE user_id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);

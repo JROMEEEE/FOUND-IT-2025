@@ -55,7 +55,7 @@ function log_activity($conn, $user_id, $action, $table_name, $record_id = null, 
     ]);
 }
 
-// ------------------ FORM SUBMISSION ------------------
+// FORM SUBMISSION
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $fnd_name = trim($_POST['fnd_name']);
     $fnd_desc = trim($_POST['fnd_desc']);
