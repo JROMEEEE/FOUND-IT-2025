@@ -92,7 +92,7 @@
               <i class="bi bi-people display-4 text-danger mb-3"></i>
               <h5 class="fw-bold mb-1">Manage Users</h5>
               <p class="text-muted small mb-3">View, approve, or remove registered users.</p>
-              <a href="manage_users.php" class="btn btn-danger btn-sm fw-semibold">
+              <a href="admin_manage_user.php" class="btn btn-danger btn-sm fw-semibold">
                 <i class="bi bi-person-gear"></i> Manage
               </a>
             </div>

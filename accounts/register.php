@@ -96,10 +96,12 @@ if (isset($_POST['verify_otp'])) {
                 } else {
                     $hashed_password = password_hash($otpData['password'], PASSWORD_DEFAULT);
 
+                    // REGISTER WITH is_approved = 0
                     $stmt = $conn->prepare("
-                        INSERT INTO users_table (user_name, contact_no, date_registered, is_admin, sr_code, email, password)
-                        VALUES (?, ?, NOW(), 0, ?, ?, ?)
+                        INSERT INTO users_table (user_name, contact_no, date_registered, is_admin, sr_code, email, password, is_approved)
+                        VALUES (?, ?, NOW(), 0, ?, ?, ?, 0)
                     ");
+
                     $stmt->execute([
                         $otpData['user_name'],
                         $otpData['contact_no'],
@@ -108,7 +110,7 @@ if (isset($_POST['verify_otp'])) {
                         $hashed_password
                     ]);
 
-                    $success = "Account created successfully! You can now log in.";
+                    $success = "Account created! Waiting for admin approval before you can log in.";
                     unset($_SESSION['otp_data']);
                 }
             } catch (PDOException $e) {
@@ -131,96 +133,96 @@ if (isset($_POST['verify_otp'])) {
 <title>FOUND-IT | Register with OTP</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/account.css">
-
+<link rel="stylesheet" href="../css/account.css">
 </head>
 
 <body class="register-page">
 
-  <div class="register-wrapper">
-    <!-- Left Side -->
-    <div class="left-panel">
-    </div>
+<div class="register-wrapper">
+    <div class="left-panel"></div>
 
-   <!-- Right Side -->
-<div class="right-panel">
-    <!-- Heading with House Icon -->
-    <div class="heading-wrapper d-flex align-items-center mb-3">
-      <h2 class="me-2 mb-0">Create your account</h2>
-      <a href="../index.php" class="text-decoration-none" data-bs-toggle="tooltip" title="Dashboard" style="margin-left: auto;">
-        <i class="bi bi-house text-danger fs-4"></i>
-      </a>
-    </div>
-
-    <p class="text-muted mb-4">Register to your account</p>
-
-<?php if (!empty($error)): ?>
-<div class="alert alert-danger text-center"><?php echo htmlspecialchars($error); ?></div>
-<?php elseif (!empty($success)): ?>
-<div class="alert alert-success text-center"><?php echo htmlspecialchars($success); ?></div>
-<?php endif; ?>
-
-<form method="POST" action="">
-  <div class="mb-3">
-    <label for="user_name" class="form-label fw-semibold">Full Name</label>
-    <input type="text" class="form-control" id="user_name" name="user_name" placeholder="Enter your full name" required
-           value="<?php echo isset($_POST['user_name']) ? htmlspecialchars($_POST['user_name']) : ''; ?>">
-  </div>
-
-  <div class="mb-3">
-    <label for="sr_code" class="form-label fw-semibold">SR Code</label>
-    <input type="text" class="form-control" id="sr_code" name="sr_code" placeholder="Enter your SR Code (if student, ignore if otherwise)"
-           value="<?php echo isset($_POST['sr_code']) ? htmlspecialchars($_POST['sr_code']) : ''; ?>">
-  </div>
-
-  <div class="mb-3">
-    <label for="email" class="form-label fw-semibold">Email</label>
-    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required
-           value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-  </div>
-
-  <div class="mb-3">
-    <label for="contact_no" class="form-label fw-semibold">Contact Number</label>
-    <input type="text" class="form-control" id="contact_no" name="contact_no" placeholder="e.g. 09171234567" required
-           value="<?php echo isset($_POST['contact_no']) ? htmlspecialchars($_POST['contact_no']) : ''; ?>">
-  </div>
-
-  <div class="mb-3">
-    <label for="password" class="form-label fw-semibold">Password</label>
-    <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
-  </div>
-
-  <div class="mb-4">
-    <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
-    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
-  </div>
-
-  <button type="submit" name="submit_form" class="btn btn-danger w-100 fw-semibold">Send OTP & Continue</button>
- <div class="d-flex justify-content-between" style="margin-top: 20px;">
-    <a href="login.php" class="btn btn-outline-danger w-100 fw-semibold" style="margin-left: auto;">Back to Login</a>
-  </div>
-</form>
-
-<!-- OTP Modal -->
-<div class="modal fade" id="otpModal" tabindex="-1" aria-labelledby="otpModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <form method="POST" class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="otpModalLabel">Enter OTP (DO NOT CLOSE THIS MODAL)</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="mb-3">
-          <label for="otp" class="form-label fw-semibold">OTP</label>
-          <input type="text" class="form-control" id="otp" name="otp" placeholder="Enter OTP" required>
+    <div class="right-panel">
+        <div class="heading-wrapper d-flex align-items-center mb-3">
+            <h2 class="me-2 mb-0">Create your account</h2>
+            <a href="../index.php" class="text-decoration-none" data-bs-toggle="tooltip" title="Dashboard" style="margin-left: auto;">
+                <i class="bi bi-house text-danger fs-4"></i>
+            </a>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="submit" name="verify_otp" class="btn btn-danger w-100 fw-semibold">Verify & Register</button>
-      </div>
-    </form>
-  </div>
+
+        <p class="text-muted mb-4">Register to your account</p>
+
+        <?php if (!empty($error)): ?>
+        <div class="alert alert-danger text-center"><?php echo htmlspecialchars($error); ?></div>
+        <?php elseif (!empty($success)): ?>
+        <div class="alert alert-success text-center"><?php echo htmlspecialchars($success); ?></div>
+        <?php endif; ?>
+
+        <form method="POST" action="">
+            <div class="mb-3">
+                <label for="user_name" class="form-label fw-semibold">Full Name</label>
+                <input type="text" class="form-control" id="user_name" name="user_name" placeholder="Enter your full name" required
+                value="<?= isset($_POST['user_name']) ? htmlspecialchars($_POST['user_name']) : '' ?>">
+            </div>
+
+            <div class="mb-3">
+                <label for="sr_code" class="form-label fw-semibold">SR Code</label>
+                <input type="text" class="form-control" id="sr_code" name="sr_code" placeholder="Enter your SR Code (if student, ignore if otherwise)"
+                value="<?= isset($_POST['sr_code']) ? htmlspecialchars($_POST['sr_code']) : '' ?>">
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label fw-semibold">Email</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required
+                value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>">
+            </div>
+
+            <div class="mb-3">
+                <label for="contact_no" class="form-label fw-semibold">Contact Number</label>
+                <input type="text" class="form-control" id="contact_no" name="contact_no" placeholder="e.g. 09171234567" required
+                value="<?= isset($_POST['contact_no']) ? htmlspecialchars($_POST['contact_no']) : '' ?>">
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label fw-semibold">Password</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
+            </div>
+
+            <button type="submit" name="submit_form" class="btn btn-danger w-100 fw-semibold">Send OTP & Continue</button>
+
+            <div class="d-flex justify-content-between mt-3">
+                <a href="login.php" class="btn btn-outline-danger w-100 fw-semibold">Back to Login</a>
+            </div>
+        </form>
+
+        <!-- OTP Modal -->
+        <div class="modal fade" id="otpModal" tabindex="-1" aria-labelledby="otpModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="POST" class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="otpModalLabel">Enter OTP (DO NOT CLOSE THIS MODAL)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="otp" class="form-label fw-semibold">OTP</label>
+                            <input type="text" class="form-control" id="otp" name="otp" placeholder="Enter OTP" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" name="verify_otp" class="btn btn-danger w-100 fw-semibold">Verify & Register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <?php if (!empty($showModal)): ?>
