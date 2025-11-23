@@ -100,6 +100,20 @@ $email = htmlspecialchars($_SESSION['email']);
           </div>
         </div>
       </div>
+
+      <!-- VIEW DISCARDED ITEMS -->
+      <div class="col-md-4 d-flex">
+        <div class="card shadow border-0 flex-fill">
+          <div class="card-body d-flex flex-column text-center">
+            <i class="bi bi-trash3 display-4 text-danger mb-3"></i>
+            <h5 class="fw-bold mb-2">View Discarded Items</h5>
+            <p class="text-muted small mb-4">Check items that have been discarded after 1 week.</p>
+            <a href="item_decay.php" class="btn btn-danger fw-semibold mt-auto">
+              <i class="bi bi-eye"></i> View Items
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- BACK BUTTON -->

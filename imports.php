@@ -12,3 +12,5 @@
 
 <!-- Bootstrap JS -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<?php date_default_timezone_set('Asia/Manila'); ?>

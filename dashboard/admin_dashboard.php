@@ -173,6 +173,19 @@
           </div>
         </div>
 
+        <!-- DECAYED ITEMS -->
+        <div class="col-md-4">
+          <div class="card shadow border-0 h-100">
+            <div class="card-body text-center">
+              <i class="bi bi-trash display-4 text-danger mb-3"></i>
+              <h5 class="fw-bold mb-1">Decayed Items</h5>
+              <p class="text-muted small mb-3">View items automatically removed by the system after 1 week.</p>
+              <a href="admin_item_decay.php" class="btn btn-danger btn-sm fw-semibold">
+                <i class="bi bi-eye"></i> View Decayed
+              </a>
+            </div>
+          </div>
+        </div>
 
         <!-- SYSTEM STATISTICS (Chart.js) -->
         <div class="col-md-4">

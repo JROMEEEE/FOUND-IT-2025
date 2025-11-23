@@ -19,4 +19,6 @@ class Database {
         return $this->conn;
     }
 }
+
+date_default_timezone_set('Asia/Manila');
 ?>

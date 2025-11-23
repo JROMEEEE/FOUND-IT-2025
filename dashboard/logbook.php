@@ -28,9 +28,17 @@ try {
     $conn = $database->getConnect();
 
     $query = "
-        SELECT al.*, u.user_name
+        SELECT al.*, u.user_name,
+               fr.fnd_name AS found_name,
+               dr.fnd_name AS decayed_name,
+               lr.lost_name AS lost_name,
+               cr.claimer_name AS claim_name
         FROM activity_log al
         LEFT JOIN users_table u ON al.user_id = u.user_id
+        LEFT JOIN found_report fr ON al.table_name = 'found_report' AND al.record_id = fr.fnd_id
+        LEFT JOIN decayed_table dr ON al.table_name = 'decayed_table' AND al.record_id = dr.fnd_id
+        LEFT JOIN lost_report lr ON al.table_name = 'lost_report' AND al.record_id = lr.lost_id
+        LEFT JOIN claim_request cr ON al.table_name = 'claim_request' AND al.record_id = cr.request_id
         ORDER BY al.created_at DESC
     ";
     $stmt = $conn->query($query);
@@ -54,6 +62,7 @@ pre { white-space: pre-wrap; word-wrap: break-word; }
 .table-claim { background-color: #d0ebff; }
 .table-found { background-color: #d3f9d8; }
 .table-lost { background-color: #fff3bf; }
+.table-decayed { background-color: #f8d7da; }
 </style>
 </head>
 <body class="bg-light">
@@ -96,6 +105,7 @@ pre { white-space: pre-wrap; word-wrap: break-word; }
         <button class="btn btn-outline-danger btn-sm category-btn me-1" data-category="claim_request">Claims</button>
         <button class="btn btn-outline-danger btn-sm category-btn me-1" data-category="found_report">Found Items</button>
         <button class="btn btn-outline-danger btn-sm category-btn me-1" data-category="lost_report">Lost Items</button>
+        <button class="btn btn-outline-danger btn-sm category-btn me-1" data-category="decayed_table">Decayed Items</button>
     </div>
 
     <div class="card shadow border-0">
@@ -114,7 +124,7 @@ pre { white-space: pre-wrap; word-wrap: break-word; }
                                 <th>User</th>
                                 <th>Action</th>
                                 <th>Table</th>
-                                <th>Record ID</th>
+                                <th>Record Name</th>
                                 <th>Details</th>
                                 <th>Timestamp</th>
                             </tr>
@@ -125,13 +135,21 @@ pre { white-space: pre-wrap; word-wrap: break-word; }
                             if ($log['table_name'] === 'claim_request') $rowClass = 'table-claim';
                             if ($log['table_name'] === 'found_report') $rowClass = 'table-found';
                             if ($log['table_name'] === 'lost_report') $rowClass = 'table-lost';
+                            if ($log['table_name'] === 'decayed_table') $rowClass = 'table-decayed';
+
+                            // Determine record name
+                            $record_name = '-';
+                            if ($log['table_name'] === 'found_report') $record_name = $log['found_name'];
+                            if ($log['table_name'] === 'decayed_table') $record_name = $log['decayed_name'];
+                            if ($log['table_name'] === 'lost_report') $record_name = $log['lost_name'];
+                            if ($log['table_name'] === 'claim_request') $record_name = $log['claim_name'];
                         ?>
                             <tr class="<?= $rowClass ?>">
                                 <td><?= $log['log_id'] ?></td>
                                 <td><?= htmlspecialchars($log['user_name'] ?: 'System') ?></td>
                                 <td><?= htmlspecialchars(strtoupper($log['action'])) ?></td>
                                 <td><?= htmlspecialchars($log['table_name']) ?></td>
-                                <td><?= htmlspecialchars($log['record_id'] ?? '-') ?></td>
+                                <td><?= htmlspecialchars($record_name) ?></td>
                                 <td><pre class="mb-0"><?= htmlspecialchars($log['details'] ?? '-') ?></pre></td>
                                 <td><?= date("M d, Y h:i A", strtotime($log['created_at'])) ?></td>
                             </tr>
@@ -163,6 +181,9 @@ $(document).ready(function () {
     // Category button filter
     $('.category-btn').on('click', function () {
         var category = $(this).data('category');
+        $('.category-btn').removeClass('btn-danger text-white').addClass('btn-outline-danger');
+        $(this).removeClass('btn-outline-danger').addClass('btn-danger text-white');
+
         if(category === '') {
             table.column(3).search('').draw(); // Show all
         } else {

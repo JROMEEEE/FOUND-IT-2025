@@ -12,6 +12,68 @@ $database = new Database();
 $conn = $database->getConnect();
 if (!$conn) die("Database connection failed.");
 
+// 1-WEEK DECAY PROCESS
+$oneWeekAgo = date('Y-m-d H:i:s', strtotime('-1 week'));
+
+try {
+    $conn->beginTransaction();
+
+    // Select items older than 1 week and are unclaimed or claimed
+    $selectStmt = $conn->prepare("
+        SELECT * 
+        FROM found_report
+        WHERE fnd_datetime <= :oneWeekAgo
+          AND fnd_status IN ('unclaimed', 'claimed')
+    ");
+    $selectStmt->execute(['oneWeekAgo' => $oneWeekAgo]);
+    $itemsToDecay = $selectStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if ($itemsToDecay) {
+        $insertStmt = $conn->prepare("
+            INSERT INTO decayed_table 
+            (fnd_id, fnd_name, fnd_desc, location_id, fnd_datetime, user_id, image_path, category_id, fnd_status)
+            VALUES (:fnd_id, :fnd_name, :fnd_desc, :location_id, :fnd_datetime, :user_id, :image_path, :category_id, :fnd_status)
+        ");
+
+        $logStmt = $conn->prepare("
+            INSERT INTO activity_log (user_id, action, table_name, record_id, details)
+            VALUES (:user_id, 'DECAY', 'found_report', :record_id, :details)
+        ");
+
+        foreach ($itemsToDecay as $item) {
+            // Move to decayed_table
+            $insertStmt->execute([
+                'fnd_id' => $item['fnd_id'],
+                'fnd_name' => $item['fnd_name'],
+                'fnd_desc' => $item['fnd_desc'],
+                'location_id' => $item['location_id'],
+                'fnd_datetime' => $item['fnd_datetime'],
+                'user_id' => $item['user_id'],
+                'image_path' => $item['image_path'],
+                'category_id' => $item['category_id'],
+                'fnd_status' => $item['fnd_status']
+            ]);
+
+            // Log action
+            $logStmt->execute([
+                'user_id' => $_SESSION['user_id'],
+                'record_id' => $item['fnd_id'],
+                'details' => json_encode($item)
+            ]);
+        }
+
+        // Delete decayed items from found_report
+        $ids = array_column($itemsToDecay, 'fnd_id');
+        $deleteStmt = $conn->prepare("DELETE FROM found_report WHERE fnd_id IN (" . implode(',', $ids) . ")");
+        $deleteStmt->execute();
+    }
+
+    $conn->commit();
+} catch (PDOException $e) {
+    $conn->rollBack();
+    die("Decay Error: " . $e->getMessage());
+}
+
 // GET CATEGORIES
 $catStmt = $conn->prepare("SELECT category_id, category_name FROM item_category ORDER BY category_name");
 $catStmt->execute();
@@ -22,6 +84,7 @@ $selectedCategoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 
 $selectedStatus = isset($_GET['status']) ? $_GET['status'] : null;
 
 // FETCH FOUND ITEMS
+
 $query = "
     SELECT f.fnd_id, f.fnd_name, f.fnd_datetime, f.fnd_status, c.category_name, l.location_name
     FROM found_report f
@@ -101,7 +164,6 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <div class="table-responsive bg-white p-3 shadow-sm rounded">
     <table id="foundTable" class="table table-striped table-hover align-middle">
       <thead>
-        <!-- FILTER ROW: DROPDOWN + BUTTONS -->
         <tr>
           <th colspan="6" class="bg-white">
             <div class="d-flex justify-content-center flex-wrap align-items-center gap-2">
@@ -125,8 +187,6 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
           </th>
         </tr>
-
-        <!-- COLUMN HEADERS -->
         <tr class="table-danger">
           <th>Item Name</th>
           <th>Category</th>
@@ -212,10 +272,9 @@ $(document).ready(function () {
         "order": [[3, "desc"]]
     });
 
-    // CATEGORY FILTER
     $('#categoryFilter').on('change', function () {
         var selectedCat = $(this).val();
-        var status = "<?= $selectedStatus ?>"; // preserve current status
+        var status = "<?= $selectedStatus ?>";
         var url = "found_dashboard.php?";
         if (selectedCat) url += "category_id=" + selectedCat + "&";
         if (status) url += "status=" + status;
