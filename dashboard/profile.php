@@ -58,7 +58,7 @@ if ($user['is_admin']) {
             padding-top: 80px;
         }
 
-        
+
 
         div.dataTables_wrapper div.dataTables_filter {
             margin-bottom: 15px;
@@ -76,10 +76,6 @@ if ($user['is_admin']) {
         /*  .card {
             border-radius: 10px;
         } */
-
-            
-
-            
     </style>
 </head>
 
@@ -103,7 +99,7 @@ if ($user['is_admin']) {
     <div class="container py-5">
 
         <!-- USER INFO -->
-        <div class="card shadow-sm mb-5 mx-auto" style="max-width: 80%; border-radius:0;">
+        <div class="card shadow-sm mb-5 mx-auto" style="max-width: 100%; border-radius:0;">
             <div class="card-body">
                 <h4 class="fw-bold text-danger text-center">
                     <i class="bi bi-person-circle"></i> <?= htmlspecialchars($user['user_name']); ?>
@@ -121,72 +117,74 @@ if ($user['is_admin']) {
         </div>
 
 
-       
+
 
 
 
         <?php if ($user['is_admin']): ?>
 
-             <div class="text-left mb-4">
-            <div class="btn-group" role="group">
-                <button class="btn btn-outline-danger active" id="foundBtn" onclick="showTable('found')">Found Items</button>
-                <button class="btn btn-outline-danger" id="claimBtn" onclick="showTable('claims')">Claim Requests</button>
-            </div>
-        </div>
-
-    <!-- FOUND REPORTS (Admin Only) -->
-    <div id="foundTableDiv" style="display: none;">
-        <div class="card shadow-sm mb-4 mx-auto border-danger" style="max-width: 100%; border-radius: 0; border-width: 0; padding: 1.0 rem;">
-
-            <!-- Header -->
-            <div class="card-header bg-danger text-white fw-semibold" style="border-radius: 0; padding: 1.0rem;">
-                <i class="bi bi-binoculars"></i> All Found Items
+            <div class="text-left mb-4">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-danger active" id="foundBtn" onclick="showTable('found')">Found Items</button>
+                    <button class="btn btn-outline-danger" id="claimBtn" onclick="showTable('claims')">Claim Requests</button>
+                </div>
             </div>
 
-            <div class="card-body">
+            <!-- FOUND REPORTS (Admin Only) -->
+            <div id="foundTableDiv" style="display: none;">
+                <div class="card shadow-sm mb-4 mx-auto border-danger" style="max-width: 100%; border-radius: 0; border-width: 0; padding: 1.0 rem;">
 
-                <?php if (empty($found_reports)): ?>
-                    <div class="text-muted fst-italic text-center py-3">
-                        No found items reported yet.
+                    <!-- Header -->
+                    <div class="card-header bg-danger text-white fw-semibold" style="border-radius: 0; padding: 1.0rem;">
+                        <i class="bi bi-binoculars"></i> All Found Items
                     </div>
-                <?php else: ?>
-                    <!-- Table inside single card -->
-                    <div class="table-responsive">
-                        <table id="foundTable" class="table table-bordered table-striped mb-0">
-                            <thead class="table-white">
-                                <tr>
-                                    <th>Item Name</th>
-                                    <th>Status</th>
-                                    <th>Date & Time</th>
-                                    <th>Image</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($found_reports as $row): ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['fnd_name']); ?></td>
-                                        <td><span class="fw-bold text-uppercase"><?= htmlspecialchars($row['fnd_status']); ?></span></td>
-                                        <td><?= date("M d, Y h:i A", strtotime($row['fnd_datetime'])); ?></td>
-                                        <td class="text-center">
-                                            <?php if ($row['image_path'] && file_exists("../" . $row['image_path'])): ?>
-                                                <img src="../<?= htmlspecialchars($row['image_path']); ?>" 
-                                                     style="height: 70px; width: 70px; object-fit: cover; border-radius: 8px;">
-                                            <?php else: ?>
-                                                <span class="text-muted">No Image</span>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+
+                    <div class="card-body">
+
+                        <?php if (empty($found_reports)): ?>
+                            <div class="text-muted fst-italic text-center py-3">
+                                No found items reported yet.
+                            </div>
+                        <?php else: ?>
+                            <!-- Table inside single card -->
+                            <div class="table-responsive">
+                                <table id="foundTable" class="table table-bordered table-striped mb-0">
+                                    <thead class="table-white">
+                                        <tr>
+                                            <th>Item Name</th>
+                                            <th>Status</th>
+                                            <th>Date & Time</th>
+                                            <th>Image</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($found_reports as $row): ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($row['fnd_name']); ?></td>
+                                                <td><span class="fw-bold text-uppercase"><?= htmlspecialchars($row['fnd_status']); ?></span></td>
+                                                <td><?= date("M d, Y h:i A", strtotime($row['fnd_datetime'])); ?></td>
+                                                <td class="text-center">
+                                                    <?php if ($row['image_path'] && file_exists("../" . $row['image_path'])): ?>
+                                                        <img src="../<?= htmlspecialchars($row['image_path']); ?>"
+                                                            style="height: 70px; width: 70px; object-fit: cover; border-radius: 8px;">
+                                                    <?php else: ?>
+                                                        <span class="text-muted">No Image</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+
                     </div>
-                <?php endif; ?>
-
+                </div>
             </div>
-        </div>
-    </div>
+        <?php endif; ?>
 
-    
+
+
 
 
 
@@ -247,72 +245,64 @@ if ($user['is_admin']) {
             </div>
         </div>
     </div>
-
     <script>
-
-        <!-- DataTables JS initialization -->
         $(document).ready(function() {
-            $('#foundTable').DataTable({
-                "lengthMenu": [5, 10, 25, 50], // Show entries options
-                "pageLength": 5,
-                "ordering": true,
-                "columnDefs": [
-                    { "orderable": false, "targets": 3 } // Disable ordering on image column
-                ]
-            });
-        });
-<?php endif; ?>
+            // Initialize Found Items table (admin only)
+            if ($('#foundTable').length) {
+                $('#foundTable').DataTable({
+                    lengthMenu: [5, 10, 25, 50],
+                    pageLength: 5,
+                    order: [
+                        [2, 'desc']
+                    ],
+                    columnDefs: [{
+                        orderable: false,
+                        targets: 3
+                    }],
+                    language: {
+                        search: "_INPUT_",
+                        searchPlaceholder: "Search found items..."
+                    }
+                });
+            }
 
-        
-        $(document).ready(function() {
-            $('#foundReportsTable').DataTable({
-                pageLength: 5,
-                order: [
-                    [2, 'desc']
-                ],
-                responsive: true,
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Search found items..."
-                }
-
-            });
-
-            $('#claimRequestsTable').DataTable({
-                pageLength: 5,
-                order: [
-                    [2, 'desc']
-                ],
-                responsive: true,
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Search claims..."
+            // Initialize Claim Requests table (all users)
+            $(document).ready(function() {
+                if ($('#claimRequestsTable').length) {
+                    $('#claimRequestsTable').DataTable({
+                        pageLength: 5,
+                        order: [
+                            [2, 'desc']
+                        ],
+                        responsive: true,
+                        language: {
+                            search: "_INPUT_",
+                            searchPlaceholder: "Search claims..."
+                        }
+                    });
                 }
             });
         });
 
-
-       function showTable(tab) {
-        if(tab === 'found') {
-            document.getElementById('foundTableDiv').style.display = 'block';
-            document.getElementById('claimTableDiv').style.display = 'none';
-
-            // Toggle active class
-            document.getElementById('foundBtn').classList.add('active');
-            document.getElementById('claimBtn').classList.remove('active');
-        } else {
-            document.getElementById('foundTableDiv').style.display = 'none';
-            document.getElementById('claimTableDiv').style.display = 'block';
-
-            document.getElementById('foundBtn').classList.remove('active');
-            document.getElementById('claimBtn').classList.add('active');
+        // Toggle tables for admin
+        function showTable(tab) {
+            if (tab === 'found') {
+                document.getElementById('foundTableDiv').style.display = 'block';
+                document.getElementById('claimTableDiv').style.display = 'none';
+                document.getElementById('foundBtn').classList.add('active');
+                document.getElementById('claimBtn').classList.remove('active');
+            } else {
+                document.getElementById('foundTableDiv').style.display = 'none';
+                document.getElementById('claimTableDiv').style.display = 'block';
+                document.getElementById('foundBtn').classList.remove('active');
+                document.getElementById('claimBtn').classList.add('active');
+            }
         }
-    }
 
-     window.onload = function() {
-        showTable('found'); // shows Found Items on page load
-    };
-
+        // Show default table on page load
+        window.onload = function() {
+            showTable('found');
+        };
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
