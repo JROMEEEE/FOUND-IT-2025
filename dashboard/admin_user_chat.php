@@ -15,14 +15,14 @@ $is_admin = 1;
 $database = new Database();
 $conn = $database->getConnect();
 
-// Fetch users who actually sent messages to admin (ignore admin accounts)
+// Fetch users who actually sent messages (remove admin accounts)
 $stmt = $conn->prepare("
     SELECT DISTINCT u.user_id, u.user_name
     FROM user_admin_msgs m
     JOIN users_table u 
       ON (u.user_id = m.sender_id OR u.user_id = m.receiver_id)
     WHERE u.user_id != ? 
-      AND u.is_admin = 0       -- 🔥 REMOVE ADMIN USERS
+      AND u.is_admin = 0
     ORDER BY u.user_name ASC
 ");
 $stmt->execute([$user_id]);
@@ -35,19 +35,63 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <meta charset="UTF-8">
 <title>User Chat | FOUND-IT</title>
 <?php include '../imports.php'; ?>
+
 <style>
 body { padding-top: 80px; }
-#chatBox { max-height: 500px; overflow-y: auto; }
-.chat-card { border-radius: 10px; margin-bottom: 10px; padding: 10px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.chat-sender { font-weight: 600; color: #dc3545; margin-bottom: 5px; }
-.chat-message { white-space: pre-wrap; margin-bottom: 5px; }
-.timestamp { font-size: 0.75rem; color: #777; }
+
+/* CHAT STYLE */
+#chatBox { 
+    max-height: 500px; 
+    overflow-y: auto; 
+    padding: 10px;
+}
+
+/* Default message card */
+.chat-card {
+    border-radius: 15px;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    max-width: 75%;
+}
+
+/* USER message on ADMIN view → WHITE bubble, LEFT side */
+.user-msg {
+    background-color: #ffffff;
+    color: #000;
+    align-self: flex-start;
+    border: 1px solid #ddd;
+}
+
+/* ADMIN message on ADMIN view → RED bubble, RIGHT side */
+.admin-msg {
+    background-color: #dc3545;
+    color: #fff;
+    align-self: flex-end;
+}
+
+/* Wrapper to allow flex positioning */
+.msg-row {
+    display: flex;
+    width: 100%;
+}
+
+/* Sender label + timestamp */
+.chat-sender { font-weight: 600; margin-bottom: 3px; }
+.timestamp { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; }
+
+/* User list cards */
 .user-cards { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-.user-card { padding: 10px 15px; border-radius: 10px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
+.user-card {
+    padding: 10px 15px; border-radius: 10px;
+    background: #fff; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: .2s;
+}
 .user-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
 .user-card.active { border-left: 5px solid #dc3545; }
 </style>
 </head>
+
 <body class="bg-light">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
@@ -65,35 +109,42 @@ body { padding-top: 80px; }
 </nav>
 
 <div class="container py-5">
+
 <div class="card shadow-sm">
-    <div class="card-header bg-danger text-white fw-semibold">
-        <i class="bi bi-chat-dots"></i> User Support Chat
-        <span id="wsStatus" class="badge bg-secondary ms-2">Connecting...</span>
+<div class="card-header bg-danger text-white fw-semibold">
+    <i class="bi bi-chat-dots"></i> User Support Chat
+    <span id="wsStatus" class="badge bg-secondary ms-2">Connecting...</span>
+</div>
+
+<div class="card-body">
+
+    <div class="user-cards mb-3">
+        <?php foreach ($users as $u): ?>
+            <div class="user-card" data-user-id="<?= $u['user_id'] ?>">
+                <?= htmlspecialchars($u['user_name']) ?>
+            </div>
+        <?php endforeach; ?>
     </div>
-    <div class="card-body">
 
-        <div class="user-cards mb-3">
-            <?php foreach($users as $u): ?>
-                <div class="user-card" data-user-id="<?= $u['user_id'] ?>"><?= htmlspecialchars($u['user_name']) ?></div>
-            <?php endforeach; ?>
-        </div>
+    <!-- CHAT MESSAGES -->
+    <div id="chatBox" class="d-flex flex-column mb-3"></div>
 
-        <div id="chatBox" class="mb-3"></div>
+    <textarea id="chatInput" class="form-control mb-2" placeholder="Type your message..." rows="3"></textarea>
+    <button id="sendBtn" class="btn btn-danger fw-semibold"><i class="bi bi-send"></i> Send</button>
 
-        <textarea id="chatInput" class="form-control mb-2" placeholder="Type your message..." rows="3"></textarea>
-        <button id="sendBtn" class="btn btn-danger fw-semibold"><i class="bi bi-send"></i> Send</button>
-    </div>
+</div>
 </div>
 </div>
 
 <script>
-const adminId = 9999; // Use unified admin ID for messages
+const adminId = 9999;
 const adminName = <?= json_encode($user_name) ?>;
+
 const wsStatus = document.getElementById("wsStatus");
 const chatBox = document.getElementById("chatBox");
 const chatInput = document.getElementById("chatInput");
 const sendBtn = document.getElementById("sendBtn");
-const userCards = document.querySelectorAll('.user-card');
+const userCards = document.querySelectorAll(".user-card");
 
 let ws = null;
 let targetUserId = null;
@@ -118,41 +169,53 @@ function connectWS() {
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if(!data || data.channel !== 'support') return;
-        if(targetUserId && (data.sender_id != targetUserId && data.receiver_id != targetUserId && data.sender_id != adminId)) return;
+        if (!data || data.channel !== "support") return;
 
-        const card = document.createElement("div");
-        card.className = "chat-card";
+        // ⭐ FILTER: Show messages ONLY from selected user, or sent to selected user
+        if (!targetUserId) return;
 
-        const sender = document.createElement("div");
-        sender.className = "chat-sender";
-        sender.textContent = data.sender_name;
+        const isFromUser = data.sender_id == targetUserId;
+        const isToUser = data.receiver_id == targetUserId;
 
-        const msg = document.createElement("div");
-        msg.className = "chat-message";
-        msg.textContent = data.message;
+        if (!isFromUser && !isToUser) return;
 
-        const timestamp = document.createElement("div");
-        timestamp.className = "timestamp";
-        timestamp.textContent = new Date(data.created_at || Date.now()).toLocaleString();
-
-        card.appendChild(sender);
-        card.appendChild(msg);
-        card.appendChild(timestamp);
-        chatBox.appendChild(card);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        addMessage(data);
     };
 }
 
-userCards.forEach(card => {
-    card.addEventListener('click', () => {
-        userCards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
+function addMessage(data) {
+    const row = document.createElement("div");
+    row.className = "msg-row";
 
+    const bubble = document.createElement("div");
+    bubble.className = "chat-card";
+
+    // Identify message type
+    if (data.sender_id == adminId) {
+        bubble.classList.add("admin-msg");
+    } else {
+        bubble.classList.add("user-msg");
+    }
+
+    bubble.innerHTML = `
+        <div class="chat-sender">${data.sender_name}</div>
+        <div class="chat-message">${data.message}</div>
+        <div class="timestamp">${new Date(data.created_at).toLocaleString()}</div>
+    `;
+
+    row.appendChild(bubble);
+    chatBox.appendChild(row);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+userCards.forEach(card => {
+    card.addEventListener("click", () => {
+        userCards.forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
         targetUserId = card.dataset.userId;
         chatBox.innerHTML = "";
 
-        if(ws && ws.readyState === WebSocket.OPEN){
+        if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
                 type: "register",
                 user_id: adminId,
@@ -166,7 +229,7 @@ userCards.forEach(card => {
 });
 
 sendBtn.onclick = () => {
-    if(!chatInput.value.trim() || !targetUserId || ws.readyState !== WebSocket.OPEN) return;
+    if (!chatInput.value.trim() || !targetUserId || ws.readyState !== WebSocket.OPEN) return;
 
     ws.send(JSON.stringify({
         type: "chat_message",
@@ -182,6 +245,7 @@ sendBtn.onclick = () => {
 
 connectWS();
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

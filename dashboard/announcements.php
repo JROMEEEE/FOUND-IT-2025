@@ -158,7 +158,30 @@ function connectWS() {
 if(sendBtn){
     sendBtn.onclick = () => {
         if(!isAdmin || !input.value.trim()) return;
-        ws.send(JSON.stringify({ type:"admin_announcement", user_id:userId, user_name:userName, message: input.value.trim() }));
+
+        ws.send(JSON.stringify({ 
+            type:"admin_announcement", 
+            user_id:userId, 
+            user_name:userName, 
+            message: input.value.trim() 
+        }));
+
+        // Background SMS send
+        fetch('announcements_sms.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ message: input.value.trim() })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'ok'){
+                console.log("SMS sent successfully");
+            } else {
+                console.error("SMS failed: " + (data.msg || "Unknown error"));
+            }
+        })
+        .catch(err => console.error("SMS fetch error:", err));
+
         input.value = "";
     }
 }

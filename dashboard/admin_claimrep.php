@@ -42,278 +42,246 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>FOUND-IT | Claim Review</title>
-    <?php include '../imports.php'; ?>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" href="../css/claim.css">
-
-    <style>
-        div.dataTables_wrapper div.dataTables_filter {
-            margin-bottom: 15px;
-        }
-
-        div.dataTables_wrapper div.dataTables_paginate {
-            margin-top: 15px;
-        }
-
-        .qr-preview {
-            width: 100px;
-            height: 100px;
-            object-fit: contain;
-        }
-
-        .filter-btn.active {
-            font-weight: bold;
-        }
-    </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOUND-IT | Claim Review</title>
+<?php include '../imports.php'; ?>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+div.dataTables_wrapper div.dataTables_filter { margin-bottom: 15px; }
+div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
+.qr-preview { width: 100px; height: 100px; object-fit: contain; }
+.filter-btn.active { font-weight: bold; }
+</style>
 </head>
-
 <body class="bg-light">
 
-    <!-- NAVBAR -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="admin_dashboard.php">FOUND-IT Admin</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav align-items-center">
-                    <li class="nav-item mx-2">
-                        <a class="nav-link text-white fw-semibold" href="admin_dashboard.php">
-                            <i class="bi bi-house-door"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item mx-2">
-                        <a class="btn btn-light btn-sm fw-semibold text-danger" href="../accounts/logout.php">
-                            <i class="bi bi-box-arrow-right"></i> Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="admin_dashboard.php">FOUND-IT Admin</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item mx-2">
+                    <a class="nav-link text-white fw-semibold" href="admin_dashboard.php">
+                        <i class="bi bi-house-door"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mx-2">
+                    <a class="btn btn-light btn-sm fw-semibold text-danger" href="../accounts/logout.php">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
+<?php if (isset($_SESSION['claim_status_msg'])): ?>
+<div class="alert alert-success alert-dismissible fade show m-3 mt-5" role="alert">
+    <?= htmlspecialchars($_SESSION['claim_status_msg']); ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php unset($_SESSION['claim_status_msg']); endif; ?>
 
-    <div class="container py-5 mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold text-danger mb-0"><i class="bi bi-clipboard-check"></i> Claim Request Management</h3>
-            <a href="admin_dashboard.php" class="btn btn-outline-danger fw-semibold">
-                <i class="bi bi-arrow-left"></i> Back
-            </a>
+<div class="container py-5 mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-danger mb-0"><i class="bi bi-clipboard-check"></i> Claim Request Management</h3>
+        <a href="admin_dashboard.php" class="btn btn-outline-danger fw-semibold">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-header bg-danger text-white fw-semibold">
+            <i class="bi bi-list-ul"></i> Claim Requests
         </div>
+        <div class="card-body">
 
-        <div class="card shadow border-0">
-            <div class="card-header bg-danger text-white fw-semibold" style="padding:1.0rem;">
-                <i class="bi bi-list-ul"></i> Claim Requests
+            <!-- STATUS FILTER BUTTONS CENTERED -->
+            <div class="text-center mb-3">
+                <button class="btn btn-outline-dark filter-btn mx-1 active" data-status="">All</button>
+                <button class="btn btn-outline-warning filter-btn mx-1" data-status="PENDING">Pending</button>
+                <button class="btn btn-outline-success filter-btn mx-1" data-status="APPROVED">Approved</button>
+                <button class="btn btn-outline-danger filter-btn mx-1" data-status="REJECTED">Rejected</button>
+                <button class="btn btn-outline-primary filter-btn mx-1" data-status="CLAIMED">Claimed</button>
             </div>
 
-              <div class="card-body">
-
-
-                <div class="text-left " style="margin-top: 5px; margin-bottom: 20px;">
-                    <div class="btn-group" role="group" aria-label="Status Filters">
-                        <input type="radio" class="btn-check" name="statusFilter" id="statusAll">
-                        <label class="btn btn-outline-dark filter-btn mx-1 active" data-status="">All</label>
-                        <input type="radio" class="btn-check" name="statusFilter" id="status">
-                        <button class="btn btn-outline-warning filter-btn mx-1" data-status="PENDING">Pending</button>
-                        <button class="btn btn-outline-success filter-btn mx-1" data-status="APPROVED">Approved</button>
-                        <button class="btn btn-outline-danger filter-btn mx-1" data-status="REJECTED">Rejected</button>
-                        <button class="btn btn-outline-primary filter-btn mx-1" data-status="CLAIMED">Claimed</button>
-                    </div>
-                </div>
-
-                                <!-- STATUS FILTER BUTTONS  -->
-
-
-                <?php if (empty($claims)): ?>
-                    <div class="alert alert-info text-center">No claim requests found.</div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table id="claimsTable" class="table table-bordered table-striped mb-0">
-                            <thead class="table-danger">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Ticket Code</th>
-                                    <th>Item</th>
-                                    <th>Claimer</th>
-                                    <th>Contact</th>
-                                    <th>Status</th>
-                                    <th>Requested</th>
-                                    <th>Action</th>
-                                    <th>Delete</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($claims as $row): ?>
-                                    <?php
-                                    $status = $row['status'] ?? 'pending';
-                                    $badgeClass = ($status === 'approved') ? 'success' : (($status === 'rejected') ? 'danger' : (($status === 'claimed') ? 'primary' : 'warning'));
-                                    ?>
-                                    <tr>
-                                        <td><?= $row['request_id'] ?></td>
-                                        <td class="fw-bold" style="text-transform: capitalize;"><span><?= $row['ticket_code'] ?></span></td>
-                                        <td><?= htmlspecialchars($row['fnd_name']) ?></td>
-                                        <td><?= htmlspecialchars($row['claimer_name']) ?></td>
-                                        <td><?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></td>
-                                        <td style="color: <?= $row['status'] === 'pending' ? 'orange' : ($row['status'] === 'rejected' ? 'red' : ($row['status'] === 'approved' ? 'green' : ($row['status'] === 'claimed' ? 'blue' : 'black'))); ?>; font-weight:bold; text-transform:uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
-                                        <td><?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></td>
-                                        <td>
-                                            <div class="d-flex gap-1">
-                                                <?php if ($status === 'pending'): ?>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal<?= $row['request_id'] ?>">
-                                                        <i class="bi bi-search"></i> Review
-                                                    </button>
-                                                <?php elseif ($status === 'approved' || $status === 'claimed'): ?>
-                                                    <?php if (!empty($row['qr_image_path'])): ?>
-                                                        <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#qrModal<?= $row['request_id'] ?>">
-                                                            <i class="bi bi-upc-scan"></i> QR
-                                                        </button>
-                                                    <?php else: ?>
-                                                        <span class="btn btn-outline-secondary btn-sm disabled">
-                                                            <i class="bi bi-upc-scan"></i> QR
-                                                        </span>
-                                                    <?php endif; ?>
-                                                <?php else: ?>
-                                                    <span class="text-muted">-</span>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <form action="delete_claim.php" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this claim?');">
-                                                <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-                                                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                                    <i class="bi bi-trash"></i> Delete
+            <?php if (empty($claims)): ?>
+                <div class="alert alert-info text-center">No claim requests found.</div>
+            <?php else: ?>
+                <div class="table-responsive mt-3">
+                    <table id="claimsTable" class="table table-hover align-middle">
+                        <thead class="table-danger">
+                            <tr>
+                                <th>ID</th>
+                                <th>Ticket Code</th>
+                                <th>Item</th>
+                                <th>Claimer</th>
+                                <th>Contact</th>  
+                                <th>Status</th>
+                                <th>Requested</th>
+                                <th>Action</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($claims as $row): ?>
+                            <?php
+                                $status = $row['status'] ?? 'pending';
+                                $badgeClass = ($status === 'approved') ? 'success' :
+                                              (($status === 'rejected') ? 'danger' :
+                                              (($status === 'claimed') ? 'primary' : 'warning'));
+                            ?>
+                            <tr>
+                                <td><?= $row['request_id'] ?></td>
+                                <td><span class="badge bg-dark"><?= $row['ticket_code'] ?></span></td>
+                                <td><?= htmlspecialchars($row['fnd_name']) ?></td>
+                                <td><?= htmlspecialchars($row['claimer_name']) ?></td>
+                                <td><?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></td>
+                                <td><span class="badge bg-<?= $badgeClass ?>"><?= strtoupper($status) ?></span></td>
+                                <td><?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <?php if ($status === 'pending'): ?>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal<?= $row['request_id'] ?>">
+                                                <i class="bi bi-search"></i> Review
+                                            </button>
+                                        <?php elseif ($status === 'approved' || $status === 'claimed'): ?>
+                                            <?php if (!empty($row['qr_image_path'])): ?>
+                                                <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#qrModal<?= $row['request_id'] ?>">
+                                                    <i class="bi bi-upc-scan"></i> QR
                                                 </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-
-                                    <!-- REVIEW MODAL -->
-                                    <div class="modal fade" id="reviewModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="reviewModalLabel<?= $row['request_id'] ?>" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-danger text-white">
-                                                    <h5 class="modal-title" id="reviewModalLabel<?= $row['request_id'] ?>">Review Claim #<?= $row['request_id'] ?></h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="row">
-                                                        <div class="col-md-5 text-center">
-                                                            <?php
-                                                            $imgPath = !empty($row['image_path']) ? '../' . $row['image_path'] : '';
-                                                            ?>
-                                                            <?php if ($imgPath && file_exists($imgPath)): ?>
-                                                                <img src="<?= htmlspecialchars($imgPath) ?>" alt="Item Image" class="img-fluid rounded border">
-                                                            <?php else: ?>
-                                                                <div class="border rounded p-5 text-muted">No Image Available</div>
-                                                            <?php endif; ?>
-                                                        </div>
-                                                        <div class="col-md-7">
-                                                            <h5 class="fw-bold"><?= htmlspecialchars($row['fnd_name']) ?></h5>
-                                                            <p><strong>Claimer Name:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
-                                                            <p><strong>Contact Number:</strong> <?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></p>
-                                                            <p><strong>Claim Date:</strong> <?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></p>
-                                                            <hr>
-                                                            <p><strong>Claimer's Statement:</strong></p>
-                                                            <p><?= nl2br(htmlspecialchars($row['proof_of_ownership'] ?? 'No statement provided')) ?></p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                               <div class="modal-footer">
-                                                    <div class="text-left " style="margin-top: 5px;">
-                                                            <form action="approve_claim.php" method="POST" class="d-inline">
-                                                                <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-                                                                <input type="hidden" name="action" value="approve">
-                                                                <button type="submit" class="btn btn-success" style="border-radius:0;"><i class="bi bi-check-circle"></i> Approve</button>
-                                                            </form>
-                                                            <form action="approve_claim.php" method="POST" class="d-inline">
-                                                                <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-                                                                <input type="hidden" name="action" value="reject">
-                                                                <button type="submit" class="btn btn-danger" style="border-radius:0;"><i class="bi bi-x-circle"></i> Reject</button>
-                                                            </form>
-                                                            <form action="approve_claim.php" method="POST" class="d-inline">
-                                                                <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-                                                                <input type="hidden" name="action" value="claimed">
-                                                                <button type="submit" class="btn btn-primary" style="border-radius:0;"><i class="bi bi-check-square"></i> Mark Claimed</button>
-                                                            </form>
-                                                            <button type="button" class="btn btn-secondary"" style="border-radius:0;" data-bs-dismiss="modal">Close</button>
-                                                        </div>
-                                            </div>
-                                        </div>
+                                            <?php else: ?>
+                                                <span class="btn btn-outline-secondary btn-sm disabled">
+                                                    <i class="bi bi-upc-scan"></i> QR
+                                                </span>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
                                     </div>
+                                </td>
+                                <td>
+                                    <form action="delete_claim.php" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this claim?');">
+                                        <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
 
-                                    <!-- QR MODAL -->
-                                    <?php if (!empty($row['qr_image_path'])): ?>
-                                        <div class="modal fade" id="qrModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="qrModalLabel<?= $row['request_id'] ?>" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-success text-white">
-                                                        <h5 class="modal-title" id="qrModalLabel<?= $row['request_id'] ?>">QR Code for Claim #<?= $row['request_id'] ?></h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body text-center">
-                                                        <img src="<?= htmlspecialchars($row['qr_image_path']) ?>" alt="QR Code" class="img-fluid" style="max-width:300px;">
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
+<!-- REVIEW MODALS -->
+<?php foreach ($claims as $row): ?>
+<div class="modal fade" id="reviewModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="reviewModalLabel<?= $row['request_id'] ?>" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="reviewModalLabel<?= $row['request_id'] ?>">Review Claim #<?= $row['request_id'] ?></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-5 text-center">
+              <?php 
+                  $imgPath = !empty($row['image_path']) ? '../' . $row['image_path'] : '';
+              ?>
+              <?php if ($imgPath && file_exists($imgPath)): ?>
+                  <img src="<?= htmlspecialchars($imgPath) ?>" alt="Item Image" class="img-fluid rounded border">
+              <?php else: ?>
+                  <div class="border rounded p-5 text-muted">No Image Available</div>
+              <?php endif; ?>
+          </div>
+          <div class="col-md-7">
+              <h5 class="fw-bold"><?= htmlspecialchars($row['fnd_name']) ?></h5>
+              <p><strong>Claimer Name:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
+              <p><strong>Contact Number:</strong> <?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></p>
+              <p><strong>Claim Date:</strong> <?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></p>
+              <hr>
+              <p><strong>Claimer's Statement:</strong></p>
+              <p><?= nl2br(htmlspecialchars($row['proof_of_ownership'] ?? 'No statement provided')) ?></p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <form action="approve_claim.php" method="POST" class="d-inline">
+            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+            <input type="hidden" name="action" value="approve">
+            <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Approve</button>
+        </form>
+        <form action="approve_claim.php" method="POST" class="d-inline">
+            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+            <input type="hidden" name="action" value="reject">
+            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle"></i> Reject</button>
+        </form>
+        <form action="approve_claim.php" method="POST" class="d-inline">
+            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+            <input type="hidden" name="action" value="claimed">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-square"></i> Mark Claimed</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endforeach; ?>
 
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+<!-- QR MODALS -->
+<?php foreach ($claims as $row): ?>
+<?php if (!empty($row['qr_image_path'])): ?>
+<div class="modal fade" id="qrModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="qrModalLabel<?= $row['request_id'] ?>" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="qrModalLabel<?= $row['request_id'] ?>">QR Code for Claim #<?= $row['request_id'] ?></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src="<?= htmlspecialchars($row['qr_image_path']) ?>" alt="QR Code" class="img-fluid" style="max-width:300px;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
+<?php endif; ?>
+<?php endforeach; ?>
 
-    <?php if (isset($_SESSION['claim_status_msg'])): ?>
-        <div class="d-flex justify-content-center mt-5">
-            <div class="alert alert-success alert-dismissible fade show m-3 mt-4" role="alert" style="max-width: 50%;">
-                <?= htmlspecialchars($_SESSION['claim_status_msg']); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert;"></button>
-            </div>
-        </div>
-    <?php unset($_SESSION['claim_status_msg']);
-    endif; ?>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function () {
+    let table = $('#claimsTable').DataTable({
+        pageLength: 10,
+        order: [[6, 'desc']],
+        responsive: true,
+        language: { search: "_INPUT_", searchPlaceholder: "Search claims..." }
+    });
 
-    <script>
-        $(document).ready(function() {
-            let table = $('#claimsTable').DataTable({
-                pageLength: 10,
-                order: [
-                    [6, 'desc']
-                ],
-                responsive: true,
-                language: {
-                    search: "_INPUT_",
-                    searchPlaceholder: "Search claims..."
-                }
-            });
-
-            $('.filter-btn').on('click', function() {
-                let status = $(this).data('status');
-                $('.filter-btn').removeClass('active btn-danger text-white');
-                $(this).addClass('active btn-danger text-white');
-                table.column(5).search(status).draw();
-            });
-        });
-    </script>
+    $('.filter-btn').on('click', function () {
+        let status = $(this).data('status');
+        $('.filter-btn').removeClass('active btn-danger text-white');
+        $(this).addClass('active btn-danger text-white');
+        table.column(5).search(status).draw();
+    });
+});
+</script>
 </body>
-
 </html>
