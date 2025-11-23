@@ -33,6 +33,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FOUND-IT | Admin Dashboard</title>
+      <link rel="stylesheet" href="../css/dashboard.css">
     <?php include '../imports.php'; ?>
   </head>
 
@@ -52,6 +53,13 @@
                 <i class="bi bi-house-door"></i> Dashboard
               </a>
             </li>
+
+            <li class="nav-item mx-2">
+            <a class="nav-link text-white fw-semibold" href="profile.php">
+              <i class="bi bi-person-circle"></i> Profile
+            </a>
+          </li>
+          
             <li class="nav-item mx-2">
               <a class="btn btn-light btn-sm fw-semibold text-danger" href="../accounts/logout.php">
                 <i class="bi bi-box-arrow-right"></i> Logout
@@ -64,10 +72,17 @@
 
     <!-- ADMIN DASHBOARD CONTENT -->
     <div class="container py-5 mt-5">
-      <div class="text-center mb-5">
-        <h2 class="fw-bold text-danger">Welcome Admin, <?php echo $user_name; ?>!</h2>
-        <p class="text-muted">Manage FOUND-IT system data and review user submissions here.</p>
+
+
+      <div class="container admin-container">
+      <div class="card shadow-sm  mb-5 admin-card">
+        <div class="text-left mb-5">
+          <h2 class="fw-bold text-white" style="font-size: 40px;">Welcome, <?php echo $user_name; ?>!</h2>
+          <p class="text-white">Manage FOUND-IT system data and review user submissions here.</p>
+        </div>
       </div>
+    </div>
+      
 
       <div class="row g-4 justify-content-center">
         <!-- USER MANAGEMENT -->

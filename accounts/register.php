@@ -131,17 +131,28 @@ if (isset($_POST['verify_otp'])) {
 <title>FOUND-IT | Register with OTP</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-<body class="bg-light d-flex align-items-center justify-content-center min-vh-100 p-3">
+  <link rel="stylesheet" href="../css/account.css">
 
-<div class="container">
-<div class="row justify-content-center">
-<div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
-<div class="card shadow border-0">
-<div class="card-header bg-danger text-white text-center py-3">
-<h4 class="mb-0 fw-bold">FOUND-IT Registration</h4>
-</div>
-<div class="card-body p-4">
+</head>
+
+<body class="register-page">
+
+  <div class="register-wrapper">
+    <!-- Left Side -->
+    <div class="left-panel">
+    </div>
+
+   <!-- Right Side -->
+<div class="right-panel">
+    <!-- Heading with House Icon -->
+    <div class="heading-wrapper d-flex align-items-center mb-3">
+      <h2 class="me-2 mb-0">Create your account</h2>
+      <a href="../index.php" class="text-decoration-none" data-bs-toggle="tooltip" title="Dashboard" style="margin-left: auto;">
+        <i class="bi bi-house text-danger fs-4"></i>
+      </a>
+    </div>
+
+    <p class="text-muted mb-4">Register to your account</p>
 
 <?php if (!empty($error)): ?>
 <div class="alert alert-danger text-center"><?php echo htmlspecialchars($error); ?></div>
@@ -179,30 +190,16 @@ if (isset($_POST['verify_otp'])) {
     <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
   </div>
 
-  <div class="mb-3">
+  <div class="mb-4">
     <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
     <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
   </div>
 
-  <button type="submit" name="submit_form" class="btn btn-warning w-100 fw-semibold">Send OTP & Continue</button>
+  <button type="submit" name="submit_form" class="btn btn-danger w-100 fw-semibold">Send OTP & Continue</button>
+ <div class="d-flex justify-content-between" style="margin-top: 20px;">
+    <a href="login.php" class="btn btn-outline-danger w-100 fw-semibold" style="margin-left: auto;">Back to Login</a>
+  </div>
 </form>
-
-</div>
-<div class="card-footer text-center bg-white py-3">
-<a href="login.php" class="btn btn-outline-danger fw-semibold w-100">
-<i class="bi bi-arrow-left"></i> Back to Login
-</a>
-</div>
-</div>
-
-<div class="text-center mt-4">
-<a href="../index.php" class="btn btn-outline-secondary fw-semibold">
-<i class="bi bi-house-door"></i> Back to Home
-</a>
-</div>
-</div>
-</div>
-</div>
 
 <!-- OTP Modal -->
 <div class="modal fade" id="otpModal" tabindex="-1" aria-labelledby="otpModalLabel" aria-hidden="true">
