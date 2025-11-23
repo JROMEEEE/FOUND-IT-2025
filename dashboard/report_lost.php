@@ -14,6 +14,8 @@ $conn = $database->getConnect();
 $categories = $conn->query("SELECT category_id, category_name FROM item_category")->fetchAll(PDO::FETCH_ASSOC);
 $locations = $conn->query("SELECT location_id, location_name FROM location_table")->fetchAll(PDO::FETCH_ASSOC);
 
+$error = null;
+
 // HANDLE FORM SUBMISSION
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $lost_name = trim($_POST['lost_name']);
@@ -22,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $category_id = $_POST['category_id'];
     $user_id = $_SESSION['user_id'];
     $lost_datetime = date('Y-m-d H:i:s');
-    $lost_status = 'unclaimed';
+    $lost_status = 'active';
 
     // IMAGE UPLOAD
     $uploadDir = '../uploads/lost_items/';
@@ -41,25 +43,54 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if (empty($error)) {
-        $stmt = $conn->prepare("
-            INSERT INTO lost_report (lost_name, lost_desc, location_id, lost_datetime, user_id, image_path, category_id, lost_status)
-            VALUES (:lost_name,:lost_desc,:location_id,:lost_datetime,:user_id,:image_path,:category_id,:lost_status)
-        ");
-        $stmt->bindParam(':lost_name', $lost_name);
-        $stmt->bindParam(':lost_desc', $lost_desc);
-        $stmt->bindParam(':location_id', $location_id);
-        $stmt->bindParam(':lost_datetime', $lost_datetime);
-        $stmt->bindParam(':user_id', $user_id);
-        $stmt->bindParam(':image_path', $image_path);
-        $stmt->bindParam(':category_id', $category_id);
-        $stmt->bindParam(':lost_status', $lost_status);
+        try {
+            $conn->beginTransaction();
 
-        if ($stmt->execute()) {
-            // Redirect to found_dashboard.php and pass category_id
+            // INSERT LOST REPORT
+            $stmt = $conn->prepare("
+                INSERT INTO lost_report (lost_name, lost_desc, location_id, lost_datetime, user_id, image_path, category_id, lost_status)
+                VALUES (:lost_name,:lost_desc,:location_id,:lost_datetime,:user_id,:image_path,:category_id,:lost_status)
+            ");
+            $stmt->execute([
+                ':lost_name' => $lost_name,
+                ':lost_desc' => $lost_desc,
+                ':location_id' => $location_id,
+                ':lost_datetime' => $lost_datetime,
+                ':user_id' => $user_id,
+                ':image_path' => $image_path,
+                ':category_id' => $category_id,
+                ':lost_status' => $lost_status
+            ]);
+
+            $lost_id = $conn->lastInsertId();
+
+            // LOG TO ACTIVITY_LOG
+            $logStmt = $conn->prepare("
+                INSERT INTO activity_log (user_id, action, table_name, record_id, details)
+                VALUES (:user_id, 'INSERT', 'lost_report', :record_id, :details)
+            ");
+            $details = json_encode([
+                'lost_name' => $lost_name,
+                'lost_desc' => $lost_desc,
+                'location_id' => $location_id,
+                'category_id' => $category_id,
+                'image_path' => $image_path
+            ]);
+            $logStmt->execute([
+                ':user_id' => $user_id,
+                ':record_id' => $lost_id,
+                ':details' => $details
+            ]);
+
+            $conn->commit();
+
+            // REDIRECT
             header("Location: found_dashboard.php?category_id={$category_id}");
             exit;
-        } else {
-            $error = "Error submitting report.";
+
+        } catch (Exception $e) {
+            $conn->rollBack();
+            $error = "Error submitting report: " . $e->getMessage();
         }
     }
 }
@@ -74,7 +105,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-
 <div class="container py-5">
   <div class="card shadow border-0">
     <div class="card-header bg-danger text-white text-center fw-bold">
@@ -94,7 +124,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           <label class="form-label fw-semibold">Item Description</label>
           <textarea name="lost_desc" class="form-control" rows="3" required></textarea>
         </div>
-
         <div class="row">
           <div class="col-md-6 mb-3">
             <label class="form-label fw-semibold">Location Lost</label>
@@ -115,12 +144,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </select>
           </div>
         </div>
-
         <div class="mb-3">
           <label class="form-label fw-semibold">Upload Image (optional)</label>
           <input type="file" name="lost_image" class="form-control" accept="image/*">
         </div>
-
         <div class="d-flex justify-content-between align-items-center mt-4">
           <a href="user_dashboard.php" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -133,7 +160,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

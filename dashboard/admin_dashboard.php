@@ -104,10 +104,10 @@
           <div class="card shadow border-0 h-100">
             <div class="card-body text-center">
               <i class="bi bi-box-seam display-4 text-danger mb-3"></i>
-              <h5 class="fw-bold mb-1">Manage Found/Lost Items</h5>
-              <p class="text-muted small mb-3">Review reported items in the database.</p>
-              <a href="manage_items.php" class="btn btn-outline-danger btn-sm fw-semibold">
-                <i class="bi bi-archive"></i> Review Items
+              <h5 class="fw-bold mb-1">Transaction Logbook</h5>
+              <p class="text-muted small mb-3">View all transactions in the database</p>
+              <a href="logbook.php" class="btn btn-outline-danger btn-sm fw-semibold">
+                <i class="bi bi-archive"></i> Logbook
               </a>
             </div>
           </div>

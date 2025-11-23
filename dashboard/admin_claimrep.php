@@ -52,6 +52,7 @@ try {
 div.dataTables_wrapper div.dataTables_filter { margin-bottom: 15px; }
 div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
 .qr-preview { width: 100px; height: 100px; object-fit: contain; }
+.filter-btn.active { font-weight: bold; }
 </style>
 </head>
 <body class="bg-light">
@@ -100,6 +101,16 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
             <i class="bi bi-list-ul"></i> Claim Requests
         </div>
         <div class="card-body">
+
+            <!-- STATUS FILTER BUTTONS CENTERED -->
+            <div class="text-center mb-3">
+                <button class="btn btn-outline-dark filter-btn mx-1 active" data-status="">All</button>
+                <button class="btn btn-outline-warning filter-btn mx-1" data-status="PENDING">Pending</button>
+                <button class="btn btn-outline-success filter-btn mx-1" data-status="APPROVED">Approved</button>
+                <button class="btn btn-outline-danger filter-btn mx-1" data-status="REJECTED">Rejected</button>
+                <button class="btn btn-outline-primary filter-btn mx-1" data-status="CLAIMED">Claimed</button>
+            </div>
+
             <?php if (empty($claims)): ?>
                 <div class="alert alert-info text-center">No claim requests found.</div>
             <?php else: ?>
@@ -251,16 +262,21 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 $(document).ready(function () {
-    $('#claimsTable').DataTable({
+    let table = $('#claimsTable').DataTable({
         pageLength: 10,
         order: [[6, 'desc']],
         responsive: true,
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search claims..."
-        }
+        language: { search: "_INPUT_", searchPlaceholder: "Search claims..." }
+    });
+
+    $('.filter-btn').on('click', function () {
+        let status = $(this).data('status');
+        $('.filter-btn').removeClass('active btn-danger text-white');
+        $(this).addClass('active btn-danger text-white');
+        table.column(5).search(status).draw();
     });
 });
 </script>

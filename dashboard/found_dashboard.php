@@ -17,31 +17,37 @@ $catStmt = $conn->prepare("SELECT category_id, category_name FROM item_category 
 $catStmt->execute();
 $categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// GET SELECTED CATEGORY (OPTIONAL)
-// Can come from query string: ?category_id=123
+// GET SELECTED CATEGORY AND STATUS (OPTIONAL)
 $selectedCategoryId = isset($_GET['category_id']) ? (int)$_GET['category_id'] : null;
+$selectedStatus = isset($_GET['status']) ? $_GET['status'] : null;
 
 // FETCH FOUND ITEMS
+$query = "
+    SELECT f.fnd_id, f.fnd_name, f.fnd_datetime, f.fnd_status, c.category_name, l.location_name
+    FROM found_report f
+    INNER JOIN item_category c ON f.category_id = c.category_id
+    INNER JOIN location_table l ON f.location_id = l.location_id
+    WHERE 1
+";
+
+$params = [];
+
+// Filter by category
 if ($selectedCategoryId) {
-    $stmt = $conn->prepare("
-        SELECT f.fnd_id, f.fnd_name, f.fnd_datetime, f.fnd_status, c.category_name, l.location_name
-        FROM found_report f
-        INNER JOIN item_category c ON f.category_id = c.category_id
-        INNER JOIN location_table l ON f.location_id = l.location_id
-        WHERE c.category_id = :category_id
-        ORDER BY f.fnd_datetime DESC
-    ");
-    $stmt->execute(['category_id' => $selectedCategoryId]);
-} else {
-    $stmt = $conn->prepare("
-        SELECT f.fnd_id, f.fnd_name, f.fnd_datetime, f.fnd_status, c.category_name, l.location_name
-        FROM found_report f
-        INNER JOIN item_category c ON f.category_id = c.category_id
-        INNER JOIN location_table l ON f.location_id = l.location_id
-        ORDER BY f.fnd_datetime DESC
-    ");
-    $stmt->execute();
+    $query .= " AND f.category_id = :category_id";
+    $params['category_id'] = $selectedCategoryId;
 }
+
+// Filter by status
+if ($selectedStatus) {
+    $query .= " AND f.fnd_status = :status";
+    $params['status'] = $selectedStatus;
+}
+
+$query .= " ORDER BY f.fnd_datetime DESC";
+
+$stmt = $conn->prepare($query);
+$stmt->execute($params);
 $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -88,28 +94,40 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <div class="container py-5 mt-5">
   <div class="text-center mb-4">
     <h2 class="fw-bold text-danger">Found Items Dashboard</h2>
-    <p class="text-muted">Search items, filter by category, or submit a claim.</p>
-  </div>
-
-  <!-- CATEGORY FILTER -->
-  <div class="row justify-content-center mb-3">
-    <div class="col-md-4">
-      <select id="categoryFilter" class="form-select">
-        <option value="">All Categories</option>
-        <?php foreach ($categories as $cat): ?>
-          <option value="<?= $cat['category_id'] ?>" <?= $cat['category_id'] == $selectedCategoryId ? 'selected' : '' ?>>
-            <?= htmlspecialchars($cat['category_name']) ?>
-          </option>
-        <?php endforeach; ?>
-      </select>
-    </div>
+    <p class="text-muted">Search items, filter by category or claim status, or submit a claim.</p>
   </div>
 
   <!-- TABLE -->
   <div class="table-responsive bg-white p-3 shadow-sm rounded">
     <table id="foundTable" class="table table-striped table-hover align-middle">
-      <thead class="table-danger">
+      <thead>
+        <!-- FILTER ROW: DROPDOWN + BUTTONS -->
         <tr>
+          <th colspan="6" class="bg-white">
+            <div class="d-flex justify-content-center flex-wrap align-items-center gap-2">
+              <!-- Category Dropdown -->
+              <select id="categoryFilter" class="form-select w-auto">
+                <option value="">All Categories</option>
+                <?php foreach ($categories as $cat): ?>
+                  <option value="<?= $cat['category_id'] ?>" <?= $cat['category_id'] == $selectedCategoryId ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($cat['category_name']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+
+              <!-- Status Buttons -->
+              <a href="found_dashboard.php?status=&category_id=<?= $selectedCategoryId ?>" 
+                 class="btn btn-outline-dark <?= !$selectedStatus ? 'btn-danger text-white' : '' ?>">All Statuses</a>
+              <a href="found_dashboard.php?status=unclaimed&category_id=<?= $selectedCategoryId ?>" 
+                 class="btn btn-outline-warning <?= $selectedStatus === 'unclaimed' ? 'btn-danger text-white' : '' ?>">Unclaimed</a>
+              <a href="found_dashboard.php?status=claimed&category_id=<?= $selectedCategoryId ?>" 
+                 class="btn btn-outline-success <?= $selectedStatus === 'claimed' ? 'btn-danger text-white' : '' ?>">Claimed</a>
+            </div>
+          </th>
+        </tr>
+
+        <!-- COLUMN HEADERS -->
+        <tr class="table-danger">
           <th>Item Name</th>
           <th>Category</th>
           <th>Location</th>
@@ -190,18 +208,18 @@ $found_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <script>
 $(document).ready(function () {
-    var table = $('#foundTable').DataTable({
+    $('#foundTable').DataTable({
         "order": [[3, "desc"]]
     });
 
+    // CATEGORY FILTER
     $('#categoryFilter').on('change', function () {
-        var selected = $(this).val();
-        if (selected) {
-            // Filter by category_id and reload page with query param
-            window.location.href = "found_dashboard.php?category_id=" + selected;
-        } else {
-            window.location.href = "found_dashboard.php";
-        }
+        var selectedCat = $(this).val();
+        var status = "<?= $selectedStatus ?>"; // preserve current status
+        var url = "found_dashboard.php?";
+        if (selectedCat) url += "category_id=" + selectedCat + "&";
+        if (status) url += "status=" + status;
+        window.location.href = url;
     });
 });
 </script>

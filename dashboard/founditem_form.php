@@ -12,8 +12,6 @@ $conn = $database->getConnect();
 
 // SESSION TIMEOUT (1 hour)
 $session_lifetime = 3600;
-
-// CHECK LOGIN + SESSION TIME
 if (!isset($_SESSION['user_id']) || (time() - $_SESSION['last_activity'] > $session_lifetime)) {
     session_unset();
     session_destroy();
@@ -38,7 +36,22 @@ if ($is_admin != 1) {
 $categories = $conn->query("SELECT category_id, category_name FROM item_category")->fetchAll(PDO::FETCH_ASSOC);
 $locations = $conn->query("SELECT location_id, location_name FROM location_table")->fetchAll(PDO::FETCH_ASSOC);
 
-// FORM SUBMISSION HANDLING PROCESS
+// ------------------ ACTIVITY LOG FUNCTION ------------------
+function log_activity($conn, $user_id, $action, $table_name, $record_id = null, $details = null) {
+    $stmt = $conn->prepare("
+        INSERT INTO activity_log (user_id, action, table_name, record_id, details)
+        VALUES (:user_id, :action, :table_name, :record_id, :details)
+    ");
+    $stmt->execute([
+        'user_id' => $user_id,
+        'action' => $action,
+        'table_name' => $table_name,
+        'record_id' => $record_id,
+        'details' => $details
+    ]);
+}
+
+// ------------------ FORM SUBMISSION ------------------
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $fnd_name = trim($_POST['fnd_name']);
     $fnd_desc = trim($_POST['fnd_desc']);
@@ -53,44 +66,62 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $image_path = null;
 
-    // HANDLE CAMERA CAPTURE / FILE UPL
+    // HANDLE CAMERA CAPTURE / FILE UPLOAD
     if (!empty($_POST['fnd_image_data'])) {
-        // CAM CAPTURE
-        $img = str_replace('data:image/png;base64,', '', $_POST['fnd_image_data']); // GET ONLY BASE64 STR
-        $img = base64_decode($img); // CONVERT BASE64 INTO BINARY IMG DATA SO IT CAN BE SAVED AS FILE
-        $fileName = 'found_' . time() . '.png'; // TIMESTAMP ON FILENAME
-        $filePath = $uploadDir . $fileName; // CREATE PATH NAME
-        file_put_contents($filePath, $img); // STORE RELATIVE PATH FOR DB INSERTION
-        $image_path = 'uploads/found_items/' . $fileName; // PATH NAMING
-    } elseif (!empty($_FILES['fnd_image']['name'])) { // CHECK IF FILE WAS UPLOADED
-        $fileName = basename($_FILES['fnd_image']['name']); // GET FILE NAME
-        $targetFile = $uploadDir . time() . '_' . $fileName; // CREATE PATH NAME
-        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION)); // EXTRACT FILE EXT THEN LOWERCASE
-        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif']; // ALL ALLOWED FILE TYPES
-        if (in_array($imageFileType, $allowedTypes)) { // CHECK IF FILE TYPE IS ALLOWED
-            if (move_uploaded_file($_FILES['fnd_image']['tmp_name'], $targetFile)) { // CHECK IF FILE WAS MOVED
-                $image_path = 'uploads/found_items/' . time() . '_' . $fileName; // PATH
-            } else $error = "Failed to upload image."; // ERROR IF FAILED
-        } else $error = "Invalid image type. Only JPG, PNG, GIF allowed."; // ERROR IF INVALID FILE TYPE
+        $img = str_replace('data:image/png;base64,', '', $_POST['fnd_image_data']);
+        $img = base64_decode($img);
+        $fileName = 'found_' . time() . '.png';
+        $filePath = $uploadDir . $fileName;
+        file_put_contents($filePath, $img);
+        $image_path = 'uploads/found_items/' . $fileName;
+    } elseif (!empty($_FILES['fnd_image']['name'])) {
+        $fileName = basename($_FILES['fnd_image']['name']);
+        $targetFile = $uploadDir . time() . '_' . $fileName;
+        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+        if (in_array($imageFileType, $allowedTypes)) {
+            if (move_uploaded_file($_FILES['fnd_image']['tmp_name'], $targetFile)) {
+                $image_path = 'uploads/found_items/' . time() . '_' . $fileName;
+            } else {
+                $error = "Failed to upload image.";
+                log_activity($conn, $user_id, 'UPLOAD_FAILED', 'found_report', null, $error);
+            }
+        } else {
+            $error = "Invalid image type. Only JPG, PNG, GIF allowed.";
+            log_activity($conn, $user_id, 'UPLOAD_FAILED', 'found_report', null, $error);
+        }
     }
 
     // INSERT INTO found_report
-    $sql = "INSERT INTO found_report 
-            (fnd_name, fnd_desc, location_id, fnd_datetime, user_id, image_path, category_id, fnd_status)
-            VALUES (:fnd_name, :fnd_desc, :location_id, :fnd_datetime, :user_id, :image_path, :category_id, :fnd_status)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':fnd_name', $fnd_name);
-    $stmt->bindParam(':fnd_desc', $fnd_desc);
-    $stmt->bindParam(':location_id', $location_id);
-    $stmt->bindParam(':fnd_datetime', $fnd_datetime);
-    $stmt->bindParam(':user_id', $user_id);
-    $stmt->bindParam(':image_path', $image_path);
-    $stmt->bindParam(':category_id', $category_id);
-    $stmt->bindParam(':fnd_status', $fnd_status);
-
     if (empty($error)) {
-        if ($stmt->execute()) $success = "Found item successfully reported!";
-        else $error = "Error submitting report. Please try again.";
+        $sql = "INSERT INTO found_report 
+                (fnd_name, fnd_desc, location_id, fnd_datetime, user_id, image_path, category_id, fnd_status)
+                VALUES (:fnd_name, :fnd_desc, :location_id, :fnd_datetime, :user_id, :image_path, :category_id, :fnd_status)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':fnd_name', $fnd_name);
+        $stmt->bindParam(':fnd_desc', $fnd_desc);
+        $stmt->bindParam(':location_id', $location_id);
+        $stmt->bindParam(':fnd_datetime', $fnd_datetime);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->bindParam(':image_path', $image_path);
+        $stmt->bindParam(':category_id', $category_id);
+        $stmt->bindParam(':fnd_status', $fnd_status);
+
+        if ($stmt->execute()) {
+            $fnd_id = $conn->lastInsertId();
+            $log_details = json_encode([
+                'fnd_name' => $fnd_name,
+                'fnd_desc' => $fnd_desc,
+                'location_id' => $location_id,
+                'category_id' => $category_id,
+                'image_path' => $image_path
+            ]);
+            log_activity($conn, $user_id, 'INSERT', 'found_report', $fnd_id, $log_details);
+            $success = "Found item successfully reported!";
+        } else {
+            $error = "Error submitting report. Please try again.";
+            log_activity($conn, $user_id, 'INSERT_FAILED', 'found_report', null, $error);
+        }
     }
 }
 ?>
@@ -157,7 +188,6 @@ canvas { display:block; margin-top:10px; border:1px solid #ccc; }
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Capture Image from Camera (optional)</label>
-                    <!-- LIVE CAM, NO AUDIO, SUPPORT MOBILE DEVICES -->
                     <video id="video" autoplay playsinline muted></video> 
                     <button type="button" id="snap" class="btn btn-secondary btn-sm mt-2">Take Photo</button>
                     <canvas id="canvas" width="320" height="240"></canvas>
@@ -175,26 +205,24 @@ canvas { display:block; margin-top:10px; border:1px solid #ccc; }
 
 <script>
 const video = document.getElementById('video');
-const canvas = document.getElementById('canvas'); // SURFACE
-const context = canvas.getContext('2d'); // MANIPULATE PIXELS ON CANVAS
+const canvas = document.getElementById('canvas');
+const context = canvas.getContext('2d');
 const hiddenInput = document.getElementById('fnd_image_data');
 
-// GET PERMS AND START CAM
 async function startCamera() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); // NAVIGATOR ACCESS CAM
-        video.srcObject = stream; // LIVE FEED
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
     } catch(e) {
-        alert('Cannot access camera: ' + e.message); // ERROR HNDLING
+        alert('Cannot access camera: ' + e.message);
     }
 }
 startCamera();
 
-// CAPTURE PHOTO
-document.getElementById('snap').addEventListener('click', () => { // WHEN BUTTON CLICKED
-    context.drawImage(video, 0, 0, canvas.width, canvas.height); // CAPTURE IMAGE
-    const dataURL = canvas.toDataURL('image/png'); // FRAME TO BASE64
-    hiddenInput.value = dataURL; // STORED IN HIDDEN <INPUT> SO IT CAN BE SUBMITTED IN FORM
+document.getElementById('snap').addEventListener('click', () => {
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataURL = canvas.toDataURL('image/png');
+    hiddenInput.value = dataURL;
 });
 </script>
 
