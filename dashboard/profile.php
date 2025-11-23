@@ -161,7 +161,9 @@ if ($user['is_admin']) {
                                         <?php foreach ($found_reports as $row): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($row['fnd_name']); ?></td>
-                                                <td><span class="fw-bold text-uppercase"><?= htmlspecialchars($row['fnd_status']); ?></span></td>
+                                                <td style="color: <?= $row['fnd_status'] === 'pending' ? 'gray' : ($row['fnd_status'] === 'unclaimed' ? 'red' : ($row['fnd_status'] === 'claimed' ? 'green' : 'black')); ?>; font-weight: bold; text-transform: uppercase;">
+                                                    <?= htmlspecialchars($row['fnd_status']); ?>
+                                                </td>
                                                 <td><?= date("M d, Y h:i A", strtotime($row['fnd_datetime'])); ?></td>
                                                 <td class="text-center">
                                                     <?php if ($row['image_path'] && file_exists("../" . $row['image_path'])): ?>
@@ -191,17 +193,21 @@ if ($user['is_admin']) {
         <!-- CLAIM REQUESTS -->
         <div id="claimTableDiv" style="display: <?= $user['is_admin'] ? 'none' : 'block' ?>;">
             <div class="card shadow-sm mb-5 mx-auto" style="max-width: 100%; border-radius:0;">
+
+                <!-- Header -->
                 <div class="card-header bg-danger text-white fw-semibold" style="border-radius: 0;">
                     <i class="bi bi-ticket-perforated"></i> Your Claim Requests
                 </div>
+
                 <div class="card-body">
                     <?php if (empty($claim_requests)): ?>
                         <div class="text-muted fst-italic text-center py-3">You have not submitted any claim requests.</div>
                     <?php else: ?>
-                        <div class="table-responsive mt-3" style="max-width: 100%; margin: 0 auto;">
-                            <table id="claimRequestsTable" class="table table-hover align-middle">
 
-                                <thead class="table-danger">
+                         <!-- Table inside single card -->
+                        <div class="table-responsive">
+                            <table id="claimRequestsTable" class="table table-bordered table-striped mb-0">
+                                <thead class="table-white">
                                     <tr>
                                         <th style="width: 35%;">Item</th>
                                         <th style="width: 15%;">Status</th>
@@ -212,16 +218,10 @@ if ($user['is_admin']) {
 
                                 <tbody>
                                     <?php foreach ($claim_requests as $row): ?>
-                                        <?php
-                                        $badgeClass = match ($row['status']) {
-                                            'approved' => 'success',
-                                            'rejected' => 'danger',
-                                            default => 'secondary',
-                                        };
-                                        ?>
+
                                         <tr>
                                             <td><?= htmlspecialchars($row['fnd_name']); ?></td>
-                                            <td><span class="badge bg-<?= $badgeClass ?> text-uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
+                                            <td style="color: <?= $row['status'] === 'pending' ? 'gray': ($row ['status'] === 'unclaimed' ? 'red': ($row ['status'] === 'claimed' ? 'green' : 'black')); ?>; font-weight:bold; text-transform:uppercase"><?= htmlspecialchars($row['status']); ?></span></td>
                                             <td><?= date("M d, Y h:i A", strtotime($row['request_date'])); ?></td>
                                             <td>
                                                 <?php if ($row['status'] === 'approved'): ?>

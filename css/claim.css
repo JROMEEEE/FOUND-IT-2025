@@ -1,0 +1,68 @@
+/* Flex layout to keep image and text side by side */
+.modal-body .row {
+    display: flex;
+    flex-wrap: nowrap; /* prevents stacking on larger screens */
+    gap: 1.5rem;
+}
+
+/* Image column */
+.modal-body .col-md-5 {
+    flex: 0 0 40%; /* 40% width */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-body .col-md-5 img {
+    width: 100%;
+    max-width: 250px;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+    object-fit: contain;
+}
+
+.modal-body .col-md-5 .no-image {
+    width: 100%;
+    max-width: 250px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Text column */
+.modal-body .col-md-7 {
+    flex: 1; /* take remaining width */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.modal-body .col-md-7 h5 {
+    color: #dc3545;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+}
+
+.modal-body .col-md-7 p {
+    margin-bottom: 0.5rem;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.modal-body .col-md-7 hr {
+    border-top: 1px solid #dee2e6;
+    margin: 1rem 0;
+}
+
+/* Buttons */
+.modal-footer .btn {
+    border-radius: 0;
+    min-width: 120px;
+}

@@ -7,8 +7,15 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+$showPrivacyModal = false;
+if (!isset($_SESSION['privacy_acknowledged'])) {
+    $showPrivacyModal = true;
+}
+
 $database = new Database();
 $conn = $database->getConnect();
+
+
 
 // GET CATEGORIES & LOCATIONS
 $categories = $conn->query("SELECT category_id, category_name FROM item_category")->fetchAll(PDO::FETCH_ASSOC);
@@ -103,14 +110,56 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Report Lost Item</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel = "stylesheet" href="../css/report.css">
 </head>
 <body class="bg-light">
-<div class="container py-5">
-  <div class="card shadow border-0">
-    <div class="card-header bg-danger text-white text-center fw-bold">
-      Report Lost Item
+
+
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 30%;">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="logoutModalLabel">Privacy Notice</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        <strong>Your privacy is important to us. Any images captured via your device's camera are used solely for reporting found items and will not be stored or shared without your consent.</strong>
+                    </p>
+                    <p>
+                        All data submitted is accessible only to authorized staff. Contact information is used only for communication regarding lost and found items.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="acknowledgeBtn" class="btn btn-danger fw-semibold">I Understand</button>
+
+
+
+                </div>
+            </div>
+        </div>
     </div>
+
+     <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top ">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="user_dashboard.php">FOUND-IT</a>
+            <div class="d-flex gap-2">
+                <a href="user_dashboard.php" class="btn btn-outline-light btn-sm fw-semibold">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a href="../accounts/logout.php" class="btn btn-light btn-sm text-danger fw-semibold">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+<div class="container py-5">
+<div class="card shadow-sm mb-5 mx-auto" style="max-width: 80% ; margin-top: 50px; border-radius:0; max-height: 70%">    
+            <div class="card-header bg-danger text-white text-center fw-bold" style="padding: 1.5rem; border-radius: 0;">Report Lost Item</div>
     <div class="card-body">
+
       <?php if (!empty($error)): ?>
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
       <?php endif; ?>
@@ -160,6 +209,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if ($showPrivacyModal): ?>
+                const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                privacyModal.show();
+
+                document.querySelector('#privacyModal .btn-danger').addEventListener('click', function() {
+                    fetch('acknowledge_privacy.php') // set session variable server-side
+                    .then(response=>{
+                        if (response.ok) {
+                            privacyModal.hide();
+                        } else {
+                            alert('Error acknowledging privacy notice. Please try again.');
+                        }
+                    })
+                    .catch(error=>{
+                        alert('Network error: ' + error.message);
+                    });
+                    // Modal acknowledged
+                });
+
+            <?php endif; ?>
+        });
+        </script>
+
+
 </body>
 </html>

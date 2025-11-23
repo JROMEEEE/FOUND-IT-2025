@@ -26,6 +26,9 @@ $user_name = htmlspecialchars($_SESSION['user_name']);
 $email = htmlspecialchars($_SESSION['email']);
 $is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 0;
 
+$showPrivacyModal = !isset($_SESSION['privacy_acknowledged']);
+
+
 // ADMINS ONLY
 if ($is_admin != 1) {
     header("Location: user_dashboard.php");
@@ -37,7 +40,8 @@ $categories = $conn->query("SELECT category_id, category_name FROM item_category
 $locations = $conn->query("SELECT location_id, location_name FROM location_table")->fetchAll(PDO::FETCH_ASSOC);
 
 // ------------------ ACTIVITY LOG FUNCTION ------------------
-function log_activity($conn, $user_id, $action, $table_name, $record_id = null, $details = null) {
+function log_activity($conn, $user_id, $action, $table_name, $record_id = null, $details = null)
+{
     $stmt = $conn->prepare("
         INSERT INTO activity_log (user_id, action, table_name, record_id, details)
         VALUES (:user_id, :action, :table_name, :record_id, :details)
@@ -117,6 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 'image_path' => $image_path
             ]);
             log_activity($conn, $user_id, 'INSERT', 'found_report', $fnd_id, $log_details);
+            $_SESSION['report_submitted'] = true;
             $success = "Found item successfully reported!";
         } else {
             $error = "Error submitting report. Please try again.";
@@ -128,104 +133,188 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Report Found Item | FOUND-IT</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-video { border:1px solid #ccc; width:320px; height:240px; display:block; margin-bottom:5px; }
-canvas { display:block; margin-top:10px; border:1px solid #ccc; }
-</style>
+    <meta charset="UTF-8">
+    <title>Report Found Item | FOUND-IT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel = "stylesheet" href="../css/report.css">
+
+    <style>
+        video {
+            border: 1px solid #ccc;
+            width: 320px;
+            height: 240px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        canvas {
+            display: block;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
+
 <body class="bg-light">
 
-<div class="container py-5">
-    <div class="card shadow border-0">
-        <div class="card-header bg-danger text-white text-center fw-bold">Report Found Item</div>
-        <div class="card-body">
-            <div class="alert alert-warning small">
-                <strong>Disclaimer:</strong> Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+    <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 30%;">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="logoutModalLabel">Privacy Notice</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        <strong>Your privacy is important to us. Any images captured via your device's camera are used solely for reporting found items and will not be stored or shared without your consent.</strong>
+                    </p>
+                    <p>
+                        All data submitted is accessible only to authorized staff. Contact information is used only for communication regarding lost and found items.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="acknowledgeBtn" class="btn btn-danger fw-semibold">I Understand</button>
+
+
+
+                </div>
             </div>
-
-            <?php if (!empty($success)): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
-            <?php elseif (!empty($error)): ?>
-                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
-            <?php endif; ?>
-
-            <form method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Item Name</label>
-                    <input type="text" name="fnd_name" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Item Description</label>
-                    <textarea name="fnd_desc" class="form-control" rows="3" required></textarea>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Location Found</label>
-                        <select name="location_id" class="form-select" required>
-                            <option value="">Select Location</option>
-                            <?php foreach ($locations as $loc): ?>
-                                <option value="<?= $loc['location_id'] ?>"><?= htmlspecialchars($loc['location_name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Item Category</label>
-                        <select name="category_id" class="form-select" required>
-                            <option value="">Select Category</option>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= $cat['category_id'] ?>"><?= htmlspecialchars($cat['category_name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Capture Image from Camera (optional)</label>
-                    <video id="video" autoplay playsinline muted></video> 
-                    <button type="button" id="snap" class="btn btn-secondary btn-sm mt-2">Take Photo</button>
-                    <canvas id="canvas" width="320" height="240"></canvas>
-                    <input type="hidden" name="fnd_image_data" id="fnd_image_data">
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <a href="admin_dashboard.php" class="btn btn-outline-secondary">Back to Dashboard</a>
-                    <button type="submit" class="btn btn-danger fw-semibold">Submit Report</button>
-                </div>
-            </form>
         </div>
     </div>
-</div>
 
-<script>
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const context = canvas.getContext('2d');
-const hiddenInput = document.getElementById('fnd_image_data');
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm fixed-top ">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="user_dashboard.php">FOUND-IT</a>
+            <div class="d-flex gap-2">
+                <a href="user_dashboard.php" class="btn btn-outline-light btn-sm fw-semibold">
+                    <i class="bi bi-house-door"></i> Dashboard
+                </a>
+                <a href="../accounts/logout.php" class="btn btn-light btn-sm text-danger fw-semibold">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
 
-async function startCamera() {
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = stream;
-    } catch(e) {
-        alert('Cannot access camera: ' + e.message);
-    }
-}
-startCamera();
+    <div class="container py-5">
+        <div class="card shadow-sm mb-5 mx-auto" style="max-width: 80% ; margin-top: 50px; border-radius:0; max-height: 70%">
+            <div class="card-header bg-danger text-white text-center fw-bold" style="padding: 1.5rem; border-radius: 0;">Report Found Item</div>
+            <div class="card-body">
 
-document.getElementById('snap').addEventListener('click', () => {
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataURL = canvas.toDataURL('image/png');
-    hiddenInput.value = dataURL;
-});
-</script>
+                <?php if (!empty($success)): ?>
+                    <div class="alert alert-success"><?= htmlspecialchars($success) ?></div>
+                <?php elseif (!empty($error)): ?>
+                    <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+                <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Item Name</label>
+                        <input type="text" name="fnd_name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Item Description</label>
+                        <textarea name="fnd_desc" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Location Found</label>
+                            <select name="location_id" class="form-select" required>
+                                <option value="">Select Location</option>
+                                <?php foreach ($locations as $loc): ?>
+                                    <option value="<?= $loc['location_id'] ?>"><?= htmlspecialchars($loc['location_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Item Category</label>
+                            <select name="category_id" class="form-select" required>
+                                <option value="">Select Category</option>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?= $cat['category_id'] ?>"><?= htmlspecialchars($cat['category_name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Capture Image from Camera (optional)</label>
+                        <video id="video" autoplay playsinline muted></video>
+                        <button type="button" id="snap" class="btn btn-secondary btn-sm mt-2">Take Photo</button>
+                        <canvas id="canvas" width="320" height="240"></canvas>
+                        <input type="hidden" name="fnd_image_data" id="fnd_image_data">
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a href="admin_dashboard.php" class="btn btn-outline-secondary">Back to Dashboard</a>
+                        <button type="submit" class="btn btn-danger fw-semibold">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if ($showPrivacyModal): ?>
+                const privacyModal = new bootstrap.Modal(document.getElementById('privacyModal'), {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                privacyModal.show();
+
+                document.querySelector('#privacyModal .btn-danger').addEventListener('click', function() {
+                    fetch('acknowledge_privacy.php') // set session variable server-side
+                    .then(response=>{
+                        if (response.ok) {
+                            privacyModal.hide();
+                        } else {
+                            alert('Error acknowledging privacy notice. Please try again.');
+                        }
+                    })
+                    .catch(error=>{
+                        alert('Network error: ' + error.message);
+                    });
+                    // Modal acknowledged
+                });
+
+            <?php endif; ?>
+        });
+
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const hiddenInput = document.getElementById('fnd_image_data');
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment"
+                    }
+                });
+                video.srcObject = stream;
+            } catch (e) {
+                alert('Cannot access camera: ' + e.message);
+            }
+        }
+        startCamera();
+
+        document.getElementById('snap').addEventListener('click', () => {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataURL = canvas.toDataURL('image/png');
+            hiddenInput.value = dataURL;
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

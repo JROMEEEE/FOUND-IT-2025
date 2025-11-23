@@ -34,6 +34,15 @@ if (isset($_POST['update'])) {
   $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
 
   $stmt->execute();
+
+  $_SESSION['user_name'] = $user_name;
+  $_SESSION['email'] = $email;
+  $_SESSION['contact_no'] = $contact_no;
+  $_SESSION['sr_code'] = $sr_code;
+  
+  header("Location: user_dashboard.php");
+  exit;
+  
 }
 
 $stmt = $conn->prepare("SELECT user_name, contact_no, sr_code, email FROM users_table WHERE user_id = :user_id");
