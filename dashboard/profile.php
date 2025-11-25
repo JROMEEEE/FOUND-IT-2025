@@ -103,8 +103,10 @@ $lost_reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <button class="btn btn-outline-danger" id="claimBtn" onclick="showTable('claims')">Claim Requests</button>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- FOUND REPORTS -->
+    <?php if ($user['is_admin']): ?>
     <div id="foundTableDiv" style="display:block;">
         <div class="card shadow-sm mb-4 mx-auto border-danger" style="max-width:100%; border-radius:0; padding:1rem;">
             <div class="card-header bg-danger text-white fw-semibold" style="border-radius:0;">
@@ -198,65 +200,91 @@ $lost_reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- LOST REPORTS -->
-    <div id="lostTableDiv">
-        <div class="card shadow-sm mb-5 mx-auto" style="max-width:100%; border-radius:0;">
-            <div class="card-header bg-danger text-white fw-semibold" style="border-radius:0;">
-                <i class="bi bi-search"></i> Your Lost Reports
+<!-- LOST REPORTS -->
+<div id="lostTableDiv">
+    <div class="card shadow-sm mb-5 mx-auto" style="max-width:100%; border-radius:0;">
+        <div class="card-header bg-danger text-white fw-semibold" style="border-radius:0;">
+            <i class="bi bi-search"></i> Your Lost Reports
+        </div>
+        <div class="card-body">
+            <?php if(empty($lost_reports)): ?>
+                <div class="text-muted fst-italic text-center py-3">You have not submitted any lost reports.</div>
+            <?php else: ?>
+            <div class="table-responsive">
+                <table id="lostReportsTable" class="table table-bordered table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Description</th>
+                            <th>Date & Time</th>
+                            <th>Image</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($lost_reports as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['lost_name']); ?></td>
+                            <td><?= htmlspecialchars($row['lost_desc']); ?></td>
+                            <td><?= date("M d, Y h:i A", strtotime($row['lost_datetime'])); ?></td>
+                            <td class="text-center">
+                                <?php if($row['image_path'] && file_exists("../".$row['image_path'])): ?>
+                                    <img src="../<?= htmlspecialchars($row['image_path']); ?>" style="height:70px;width:70px;object-fit:cover;border-radius:8px;">
+                                <?php else: ?>
+                                    <span class="text-muted">No Image</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-            <div class="card-body">
-                <?php if(empty($lost_reports)): ?>
-                    <div class="text-muted fst-italic text-center py-3">You have not submitted any lost reports.</div>
-                <?php else: ?>
-                <div class="table-responsive">
-                    <table id="lostReportsTable" class="table table-bordered table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Item Name</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Date & Time</th>
-                                <th>Image</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach($lost_reports as $row): ?>
-                            <tr>
-                                <td><?= htmlspecialchars($row['lost_name']); ?></td>
-                                <td><?= htmlspecialchars($row['lost_desc']); ?></td>
-                                <td style="color: <?= $row['lost_status']==='active'?'green':($row['lost_status']==='expired'?'gray':'red'); ?>; font-weight:bold; text-transform:uppercase;">
-                                    <?= htmlspecialchars($row['lost_status'] ?: 'active'); ?>
-                                </td>
-                                <td><?= date("M d, Y h:i A", strtotime($row['lost_datetime'])); ?></td>
-                                <td class="text-center">
-                                    <?php if($row['image_path'] && file_exists("../".$row['image_path'])): ?>
-                                        <img src="../<?= htmlspecialchars($row['image_path']); ?>" style="height:70px;width:70px;object-fit:cover;border-radius:8px;">
-                                    <?php else: ?>
-                                        <span class="text-muted">No Image</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php endif; ?>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
 
+
 <script>
 $(document).ready(function() {
-    if ($('#foundTable').length) $('#foundTable').DataTable({lengthMenu:[5,10,25,50], pageLength:5, order:[[2,'desc']], columnDefs:[{orderable:false, targets:3}], language:{search:"_INPUT_", searchPlaceholder:"Search found items..."}});
-    if ($('#claimRequestsTable').length) $('#claimRequestsTable').DataTable({pageLength:5, order:[[2,'desc']], responsive:true, language:{search:"_INPUT_", searchPlaceholder:"Search claims..."}});
-    if ($('#lostReportsTable').length) $('#lostReportsTable').DataTable({pageLength:5, order:[[3,'desc']], responsive:true, language:{search:"_INPUT_", searchPlaceholder:"Search lost reports..."}});
+    if ($('#foundTable').length)
+        $('#foundTable').DataTable({
+            lengthMenu:[5,10,25,50],
+            pageLength:5,
+            order:[[2,'desc']],
+            columnDefs:[{orderable:false, targets:3}],
+            language:{search:"_INPUT_", searchPlaceholder:"Search found items..."}
+        });
+
+    if ($('#claimRequestsTable').length)
+        $('#claimRequestsTable').DataTable({
+            pageLength:5,
+            order:[[2,'desc']],
+            responsive:true,
+            language:{search:"_INPUT_", searchPlaceholder:"Search claims..."}
+        });
+
+    if ($('#lostReportsTable').length)
+        $('#lostReportsTable').DataTable({
+            pageLength:5,
+            order:[[2,'desc']], 
+            responsive:true,
+            language:{search:"_INPUT_", searchPlaceholder:"Search lost reports..."}
+        });
 });
 
 // Toggle tables for admin
 function showTable(tab) {
-    if(tab==='found'){ $('#foundTableDiv').show(); $('#claimTableDiv').hide(); $('#foundBtn').addClass('active'); $('#claimBtn').removeClass('active'); }
-    else{ $('#foundTableDiv').hide(); $('#claimTableDiv').show(); $('#foundBtn').removeClass('active'); $('#claimBtn').addClass('active'); }
+    if(tab==='found'){
+        $('#foundTableDiv').show();
+        $('#claimTableDiv').hide();
+        $('#foundBtn').addClass('active');
+        $('#claimBtn').removeClass('active');
+    } else {
+        $('#foundTableDiv').hide();
+        $('#claimTableDiv').show();
+        $('#foundBtn').removeClass('active');
+        $('#claimBtn').addClass('active');
+    }
 }
 </script>
 
