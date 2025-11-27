@@ -266,6 +266,46 @@ try {
     </div>
   </div>
 
+ <!-- PDF REPORT GENERATION -->
+<div class="card shadow-sm border-0 mt-5 mx-auto" style="max-width: 700px;">
+    <div class="card-body text-center">
+      <h5 class="fw-bold text-danger mb-3">Generate PDF Report</h5>
+      <p class="text-muted mb-4">Select the type of report and the corresponding date/month/year.</p>
+      
+      <form action="generate_report.php" method="GET" class="d-flex flex-column align-items-center gap-3">
+        <!-- Report Type Filter -->
+        <div class="w-50">
+          <label for="filter" class="form-label fw-semibold">Report Type:</label>
+          <select name="filter" id="filter" class="form-select" onchange="updateValueInput()">
+            <option value="daily">Daily Report</option>
+            <option value="monthly">Monthly Report</option>
+            <option value="yearly">Yearly Report</option>
+          </select>
+        </div>
+
+        <!-- Date/Month/Year Input -->
+        <div class="w-50">
+          <label for="value" class="form-label fw-semibold">Select Date/Month/Year:</label>
+          <input type="date" id="value" name="value" class="form-control" value="<?= date('Y-m-d') ?>">
+        </div>
+
+        <!-- Generate Button -->
+        <div class="mt-3">
+          <button type="submit" class="btn btn-danger fw-semibold">
+            <i class="bi bi-file-earmark-pdf"></i> Generate PDF
+          </button>
+        </div>
+      </form>
+
+      <!-- Optional Instructions -->
+      <p class="text-muted mt-3 mb-0" style="font-size: 0.9rem;">
+        The PDF will include summary counts, charts, and item breakdowns for the selected period.
+      </p>
+    </div>
+  </div>
+
+
+
   <!-- BACK BUTTON -->
   <div class="text-center mt-5">
     <a href="admin_dashboard.php" class="btn btn-outline-secondary fw-semibold">
@@ -389,6 +429,24 @@ document.getElementById('downloadClaimStatusChart').addEventListener('click', ()
   link.href = claimStatusChart.toBase64Image(); 
   link.click(); 
 });
+
+function updateValueInput() {
+    const filter = document.getElementById('filter').value;
+    const input = document.getElementById('value');
+
+    if (filter === 'daily') {
+        input.type = 'date';
+        input.value = new Date().toISOString().split('T')[0];
+    } else if (filter === 'monthly') {
+        input.type = 'month';
+        input.value = new Date().toISOString().slice(0, 7);
+    } else if (filter === 'yearly') {
+        input.type = 'number';
+        input.min = 2000;
+        input.max = 2100;
+        input.value = new Date().getFullYear();
+    }
+}
 
 </script>
 </body>
