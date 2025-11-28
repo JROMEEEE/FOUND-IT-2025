@@ -164,7 +164,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title fw-bold" id="logoutModalLabel">Privacy Notice</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <p>
