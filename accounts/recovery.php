@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 include '../dbconnect.php';
-include '../apikeys.php'; // SMS API credentials
+include '../apikeys.php';
 $database = new Database();
 $conn = $database->getConnect();
 
