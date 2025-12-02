@@ -190,6 +190,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['discard_item'])) {
     </tbody>
     </table>
   </div>
+
+    <!-- Back Button -->
+    <div class="text-center mt-4">
+        <a href="admin_db_dashboard.php" class="btn btn-outline-secondary fw-semibold">
+            <i class="bi bi-arrow-left"></i> Return to Dashboard
+        </a>
+    </div>
+
   </div>
 
  <!-- Discard Modal -->

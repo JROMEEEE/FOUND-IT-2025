@@ -46,6 +46,24 @@ try {
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
 }
+
+// HELPER: Format details for display
+function formatDetails($log) {
+    if ($log['table_name'] === 'found_report' && $log['found_name']) {
+        return "Added item {$log['found_name']}";
+    }
+    if ($log['table_name'] === 'claim_request' && $log['claim_name']) {
+        $action = strtoupper($log['action']);
+        return "{$action} item {$log['claim_name']}";
+    }
+    if ($log['table_name'] === 'lost_report' && $log['lost_name']) {
+        return "Lost item {$log['lost_name']}";
+    }
+    if ($log['table_name'] === 'decayed_table' && $log['decayed_name']) {
+        return "Discarded item {$log['decayed_name']}";
+    }
+    return $log['details'] ?? '-';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -70,21 +88,10 @@ try {
             word-wrap: break-word;
         }
 
-        .table-claim {
-            background-color: #d0ebff;
-        }
-
-        .table-found {
-            background-color: #d3f9d8;
-        }
-
-        .table-lost {
-            background-color: #fff3bf;
-        }
-
-        .table-decayed {
-            background-color: #f8d7da;
-        }
+        .table-claim { background-color: #d0ebff; }
+        .table-found { background-color: #d3f9d8; }
+        .table-lost { background-color: #fff3bf; }
+        .table-decayed { background-color: #f8d7da; }
     </style>
 </head>
 
@@ -133,7 +140,8 @@ try {
         </div>
 
         <div class="card shadow border-0">
-            <div class="card-header bg-danger text-white fw-semibold" style="padding: 1rem; ;"> <i class="bi bi-list-ul"></i> Activity Log
+            <div class="card-header bg-danger text-white fw-semibold" style="padding: 1rem;">
+                <i class="bi bi-list-ul"></i> Activity Log
             </div>
             <div class="card-body">
                 <?php if (empty($logs)): ?>
@@ -174,7 +182,7 @@ try {
                                         <td><?= htmlspecialchars($log['table_name']) ?></td>
                                         <td><?= htmlspecialchars($record_name) ?></td>
                                         <td>
-                                            <pre class="mb-0"><?= htmlspecialchars($log['details'] ?? '-') ?></pre>
+                                            <pre class="mb-0"><?= htmlspecialchars(formatDetails($log)) ?></pre>
                                         </td>
                                         <td><?= date("M d, Y h:i A", strtotime($log['created_at'])) ?></td>
                                     </tr>
@@ -195,9 +203,7 @@ try {
         $(document).ready(function() {
             var table = $('#logbookTable').DataTable({
                 pageLength: 15,
-                order: [
-                    [6, 'desc']
-                ],
+                order: [[6, 'desc']],
                 responsive: true,
                 language: {
                     search: "_INPUT_",

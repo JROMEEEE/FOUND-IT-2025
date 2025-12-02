@@ -252,7 +252,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center mt-4">
-                        <a href="admin_dashboard.php" class="btn btn-outline-secondary">Back to Dashboard</a>
+                        <a href="admin_db_dashboard.php" class="btn btn-outline-secondary">Back to Dashboard</a>
                         <button type="submit" class="btn btn-danger fw-semibold">Submit Report</button>
                     </div>
                 </form>

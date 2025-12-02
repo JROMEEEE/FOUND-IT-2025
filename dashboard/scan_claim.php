@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FOUND-IT | Scan Claim QR</title>
+  <link rel="stylesheet" href="../css/scanner.css">
 <?php include '../imports.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
@@ -206,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
   </div>
 
   <div class="text-center mt-4">
-    <a href="admin_dashboard.php" class="btn btn-outline-secondary fw-semibold">
+    <a href="admin_db_dashboard.php" class="btn btn-outline-secondary fw-semibold">
       <i class="bi bi-arrow-left"></i> Return to Dashboard
     </a>
   </div>
@@ -223,15 +224,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
       </div>
 
       <div class="modal-body text-center">
-        <img id="modal-item-image" src="" class="img-fluid mb-3" style="max-height:200px; display:none;">
 
-        <p>Do you want to mark this ticket as claimed?</p>
+        <div class="d-flex justify-content-center mb-3">
+          <img id="modal-item-image"
+               src=""
+               class="rounded"
+               style="max-height:200px; max-width:100%; display:none; object-fit:contain;">
+        </div>
 
-        <h5 id="modal-ticket-code" class="fw-bold text-danger"></h5>
-        <p><strong>Item:</strong> <span id="modal-item-name"></span></p>
-        <p><strong>Name:</strong> <span id="modal-claimer-name"></span></p>
-        <p><strong>ID:</strong> <span id="modal-claimer-id"></span></p>
-        <p><strong>Date:</strong> <span id="modal-request-date"></span></p>
+        <p class="mb-3">Do you want to mark this ticket as claimed?</p>
+
+        <h5 id="modal-ticket-code" class="fw-bold text-danger mb-3"></h5>
+        
+        <div class="text-start d-inline-block">
+          <p class="mb-2"><strong>Item:</strong> <span id="modal-item-name"></span></p>
+          <p class="mb-2"><strong>Name:</strong> <span id="modal-claimer-name"></span></p>
+          <p class="mb-2"><strong>ID:</strong> <span id="modal-claimer-id"></span></p>
+          <p class="mb-0"><strong>Date:</strong> <span id="modal-request-date"></span></p>
+        </div>
+
       </div>
 
       <div class="modal-footer justify-content-center">
@@ -241,6 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ticket_code'])) {
 
     </div>
   </div>
+</div>
 </div>
 
 <script>

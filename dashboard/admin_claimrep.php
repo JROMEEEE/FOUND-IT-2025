@@ -14,7 +14,7 @@ $_SESSION['last_activity'] = time();
 
 // FETCH SESSION DATA
 $user_name = htmlspecialchars($_SESSION['user_name']);
-$is_admin = isset($_SESSION['is_admin']) ? $_SESSION['is_admin'] : 0;
+$is_admin = $_SESSION['is_admin'] ?? 0;
 
 // RESTRICT ACCESS
 if ($is_admin != 1) {
@@ -28,10 +28,11 @@ try {
     $conn = $database->getConnect();
 
     $query = "
-        SELECT cr.*, fr.fnd_name, fr.image_path, cv.qr_image_path
+        SELECT cr.*, fr.fnd_name, fr.image_path, cv.qr_image_path, u.user_name AS assessor_name
         FROM claim_request cr
         LEFT JOIN found_report fr ON cr.fnd_id = fr.fnd_id
         LEFT JOIN claim_verification cv ON cr.request_id = cv.request_id
+        LEFT JOIN users_table u ON cr.assessor = u.user_id
         ORDER BY cr.request_date DESC
     ";
     $stmt = $conn->query($query);
@@ -91,7 +92,7 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
 <div class="container py-5 mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold text-danger mb-0"><i class="bi bi-clipboard-check"></i> Claim Request Management</h3>
-        <a href="admin_dashboard.php" class="btn btn-outline-danger fw-semibold">
+        <a href="admin_db_dashboard.php" class="btn btn-outline-danger fw-semibold">
             <i class="bi bi-arrow-left"></i> Back
         </a>
     </div>
@@ -122,8 +123,8 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
                                 <th>Ticket Code</th>
                                 <th>Item</th>
                                 <th>Claimer</th>
-                                <th>Contact</th>  
                                 <th>Status</th>
+                                <th>Assessor</th>
                                 <th>Requested</th>
                                 <th>Action</th>
                                 <th>Delete</th>
@@ -132,26 +133,29 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
                         <tbody>
                         <?php foreach ($claims as $row): ?>
                             <?php
-                                $status = $row['status'] ?? 'pending';
-                                $badgeClass = ($status === 'approved') ? 'success' :
-                                              (($status === 'rejected') ? 'danger' :
-                                              (($status === 'claimed') ? 'primary' : 'warning'));
+                                $status = strtoupper($row['status'] ?? 'PENDING');
+                                $badgeClass = match($status) {
+                                    'APPROVED' => 'success',
+                                    'REJECTED' => 'danger',
+                                    'CLAIMED'  => 'primary',
+                                    default    => 'warning',
+                                };
                             ?>
                             <tr>
                                 <td><?= $row['request_id'] ?></td>
-                                <td><span class="badge bg-dark"><?= $row['ticket_code'] ?></span></td>
-                                <td><?= htmlspecialchars($row['fnd_name']) ?></td>
-                                <td><?= htmlspecialchars($row['claimer_name']) ?></td>
-                                <td><?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></td>
-                                <td><span class="badge bg-<?= $badgeClass ?>"><?= strtoupper($status) ?></span></td>
+                                <td><span class="badge bg-dark"><?= htmlspecialchars($row['ticket_code']) ?></span></td>
+                                <td><?= htmlspecialchars($row['fnd_name'] ?? 'N/A') ?></td>
+                                <td><?= htmlspecialchars($row['claimer_name'] ?? 'N/A') ?></td>
+                                <td><span class="badge bg-<?= $badgeClass ?>"><?= $status ?></span></td>
+                                <td><?= htmlspecialchars($row['assessor_name'] ?? '-') ?></td>
                                 <td><?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></td>
                                 <td>
                                     <div class="d-flex gap-1">
-                                        <?php if ($status === 'pending'): ?>
+                                        <?php if ($status === 'PENDING'): ?>
                                             <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal<?= $row['request_id'] ?>">
                                                 <i class="bi bi-search"></i> Review
                                             </button>
-                                        <?php elseif ($status === 'approved' || $status === 'claimed'): ?>
+                                        <?php elseif ($status === 'APPROVED' || $status === 'CLAIMED'): ?>
                                             <?php if (!empty($row['qr_image_path'])): ?>
                                                 <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#qrModal<?= $row['request_id'] ?>">
                                                     <i class="bi bi-upc-scan"></i> QR
@@ -184,21 +188,21 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
     </div>
 </div>
 
-<!-- REVIEW MODALS -->
-<?php foreach ($claims as $row): ?>
-<div class="modal fade" id="reviewModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="reviewModalLabel<?= $row['request_id'] ?>" aria-hidden="true">
+<!-- MODALS FOR REVIEW & QR -->
+<?php foreach ($claims as $row): 
+    $imgPath = !empty($row['image_path']) ? '../' . $row['image_path'] : '';
+?>
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal<?= $row['request_id'] ?>" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="reviewModalLabel<?= $row['request_id'] ?>">Review Claim #<?= $row['request_id'] ?></h5>
+        <h5 class="modal-title">Review Claim #<?= $row['request_id'] ?></h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <div class="row">
           <div class="col-md-5 text-center">
-              <?php 
-                  $imgPath = !empty($row['image_path']) ? '../' . $row['image_path'] : '';
-              ?>
               <?php if ($imgPath && file_exists($imgPath)): ?>
                   <img src="<?= htmlspecialchars($imgPath) ?>" alt="Item Image" class="img-fluid rounded border">
               <?php else: ?>
@@ -206,10 +210,10 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
               <?php endif; ?>
           </div>
           <div class="col-md-7">
-              <h5 class="fw-bold"><?= htmlspecialchars($row['fnd_name']) ?></h5>
-              <p><strong>Claimer Name:</strong> <?= htmlspecialchars($row['claimer_name']) ?></p>
-              <p><strong>Contact Number:</strong> <?= htmlspecialchars($row['contact_number'] ?: 'N/A') ?></p>
+              <h5 class="fw-bold"><?= htmlspecialchars($row['fnd_name'] ?? 'N/A') ?></h5>
+              <p><strong>Claimer Name:</strong> <?= htmlspecialchars($row['claimer_name'] ?? 'N/A') ?></p>
               <p><strong>Claim Date:</strong> <?= date("M d, Y h:i A", strtotime($row['request_date'])) ?></p>
+              <!-- <p><strong>Assessor:</strong> <?= htmlspecialchars($row['assessor_name'] ?? '-') ?></p> -->
               <hr>
               <p><strong>Claimer's Statement:</strong></p>
               <p><?= nl2br(htmlspecialchars($row['proof_of_ownership'] ?? 'No statement provided')) ?></p>
@@ -217,36 +221,28 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
         </div>
       </div>
       <div class="modal-footer">
-        <form action="approve_claim.php" method="POST" class="d-inline">
-            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-            <input type="hidden" name="action" value="approve">
-            <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Approve</button>
-        </form>
-        <form action="approve_claim.php" method="POST" class="d-inline">
-            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-            <input type="hidden" name="action" value="reject">
-            <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle"></i> Reject</button>
-        </form>
-        <form action="approve_claim.php" method="POST" class="d-inline">
-            <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
-            <input type="hidden" name="action" value="claimed">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-check-square"></i> Mark Claimed</button>
-        </form>
+        <?php foreach (['approve'=>'success', 'reject'=>'danger', 'claimed'=>'primary'] as $action => $btnColor): ?>
+            <form action="approve_claim.php" method="POST" class="d-inline">
+                <input type="hidden" name="request_id" value="<?= $row['request_id'] ?>">
+                <input type="hidden" name="action" value="<?= $action ?>">
+                <button type="submit" class="btn btn-<?= $btnColor ?>">
+                    <?= ucfirst($action) ?>
+                </button>
+            </form>
+        <?php endforeach; ?>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
-<?php endforeach; ?>
 
-<!-- QR MODALS -->
-<?php foreach ($claims as $row): ?>
+<!-- QR Modal -->
 <?php if (!empty($row['qr_image_path'])): ?>
-<div class="modal fade" id="qrModal<?= $row['request_id'] ?>" tabindex="-1" aria-labelledby="qrModalLabel<?= $row['request_id'] ?>" aria-hidden="true">
+<div class="modal fade" id="qrModal<?= $row['request_id'] ?>" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="qrModalLabel<?= $row['request_id'] ?>">QR Code for Claim #<?= $row['request_id'] ?></h5>
+                <h5 class="modal-title">QR Code for Claim #<?= $row['request_id'] ?></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center">
@@ -270,7 +266,7 @@ div.dataTables_wrapper div.dataTables_paginate { margin-top: 15px; }
 $(document).ready(function () {
     let table = $('#claimsTable').DataTable({
         pageLength: 10,
-        order: [[6, 'desc']],
+        order: [[6, 'desc']], // Adjusted column index after removing "Contact"
         responsive: true,
         language: { search: "_INPUT_", searchPlaceholder: "Search claims..." }
     });
@@ -279,7 +275,7 @@ $(document).ready(function () {
         let status = $(this).data('status');
         $('.filter-btn').removeClass('active btn-danger text-white');
         $(this).addClass('active btn-danger text-white');
-        table.column(5).search(status).draw();
+        table.column(4).search(status).draw(); // Adjusted column index
     });
 });
 </script>

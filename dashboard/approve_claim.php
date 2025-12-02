@@ -15,6 +15,15 @@ $action = $_POST['action'];
 $database = new Database();
 $conn = $database->getConnect();
 
+// Ensure current admin session
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['claim_status_msg'] = "Session expired. Please login again.";
+    header("Location: ../accounts/login.php");
+    exit;
+}
+
+$currentAdminId = $_SESSION['user_id'];
+
 // Fetch claim request
 $stmt = $conn->prepare("SELECT * FROM claim_request WHERE request_id = ?");
 $stmt->execute([$request_id]);
@@ -66,8 +75,12 @@ function sendSMS($phone, $message) {
 
 // REJECT CLAIM
 if ($action === "reject") {
-    $update = $conn->prepare("UPDATE claim_request SET status = 'rejected' WHERE request_id = ?");
-    $update->execute([$request_id]);
+    $update = $conn->prepare("
+        UPDATE claim_request 
+        SET status = 'rejected', assessor = ? 
+        WHERE request_id = ?
+    ");
+    $update->execute([$currentAdminId, $request_id]);
 
     // Send SMS notification
     $smsMessage = "Hello $userName, your claim request #$ticket_code has been rejected.";
@@ -82,9 +95,13 @@ if ($action === "reject") {
 try {
     $conn->beginTransaction();
 
-    // Update claim_request status
-    $updateClaim = $conn->prepare("UPDATE claim_request SET status = 'approved' WHERE request_id = ?");
-    $updateClaim->execute([$request_id]);
+    // Update claim_request status and set assessor
+    $updateClaim = $conn->prepare("
+        UPDATE claim_request 
+        SET status = 'approved', assessor = ? 
+        WHERE request_id = ?
+    ");
+    $updateClaim->execute([$currentAdminId, $request_id]);
 
     // Update found_report status to 'claimed'
     $updateFound = $conn->prepare("UPDATE found_report SET fnd_status = 'claimed' WHERE fnd_id = ?");
